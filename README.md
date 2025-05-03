@@ -28,8 +28,8 @@
 git clone https://github.com/salieri009/MyTistoryBlog.git
 ```
 
-###2. 다운로드 하기 (ZIP)
-초록색 
+### 2. 다운로드 하기 (ZIP)
+
 ![image](https://github.com/user-attachments/assets/ce018fad-b860-448b-b416-28a7ee2f6ae6)
 를 클릭, 
 Download ZIP 선택
