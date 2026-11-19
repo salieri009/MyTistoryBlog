@@ -154,6 +154,150 @@
     });
   }
 
+  /* ---------- Markdown pasted into the basic editor ----------
+     Tistory's basic editor keeps pasted Markdown as plain text: one <p> with <br> line breaks, so lists,
+     tables and headings show up raw. Pipe tables pasted into a code block show up as code. This turns
+     those parts (and only those) into real HTML. Posts written with the editor's own blocks are left alone. */
+  var MD = {
+    esc: function (s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); },
+    inline: function (s) {
+      var codes = [];
+      s = MD.esc(s).replace(/`([^`]+)`/g, function (_, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+      s = s.replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/|#)[^\s)]+)\)/g, '<a href="$2">$1</a>')
+        .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2">$2</a>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+        .replace(/~~([^~]+)~~/g, '<del>$1</del>');
+      return s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return '<code>' + codes[+i] + '</code>'; });
+    },
+    cells: function (line) {
+      var t = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+      return t.split('|').map(function (c) { return c.trim(); });
+    },
+    isSep: function (line) { return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line); },
+    table: function (rows) {
+      rows = rows.filter(function (r) { return !MD.isSep(r); });
+      var head = MD.cells(rows[0]), n = head.length;
+      var h = '<table><thead><tr>' + head.map(function (c) { return '<th>' + MD.inline(c) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      rows.slice(1).forEach(function (r) {
+        var c = MD.cells(r); while (c.length < n) c.push('');
+        h += '<tr>' + c.slice(0, Math.max(n, c.length)).map(function (x) { return '<td>' + MD.inline(x) + '</td>'; }).join('') + '</tr>';
+      });
+      return h + '</tbody></table>';
+    },
+    // Block parser for the subset people actually paste: headings, lists, quotes, fences, tables, rules.
+    render: function (src) {
+      var lines = src.replace(/\r/g, '').split('\n'), out = [], i = 0;
+      var isList = function (l) { return /^\s*([-*+]|\d+[.)])\s+\S/.test(l); };
+      var isPipe = function (l) { return l.indexOf('|') !== -1 && MD.cells(l).length >= 2; };
+      while (i < lines.length) {
+        var l = lines[i];
+        if (!l.trim()) { i++; continue; }
+        var fence = l.match(/^\s*```\s*([\w+#.-]*)/);
+        if (fence) {
+          var code = []; i++;
+          while (i < lines.length && !/^\s*```/.test(lines[i])) code.push(lines[i++]);
+          i++;
+          out.push('<pre' + (fence[1] ? ' class="' + MD.esc(fence[1]) + '" data-ke-language="' + MD.esc(fence[1]) + '"' : '') + '><code>' + MD.esc(code.join('\n')) + '</code></pre>');
+          continue;
+        }
+        var hd = l.match(/^\s*(#{1,6})\s+(.*?)\s*#*\s*$/);
+        if (hd) { var lv = Math.min(4, Math.max(2, hd[1].length)); out.push('<h' + lv + '>' + MD.inline(hd[2]) + '</h' + lv + '>'); i++; continue; }
+        if (/^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/.test(l)) { out.push('<hr>'); i++; continue; }
+        if (/^\s*>/.test(l)) {
+          var q = [];
+          while (i < lines.length && /^\s*>/.test(lines[i])) q.push(lines[i++].replace(/^\s*>\s?/, ''));
+          out.push('<blockquote>' + MD.render(q.join('\n')) + '</blockquote>');
+          continue;
+        }
+        if (isPipe(l) && i + 1 < lines.length && isPipe(lines[i + 1])) {
+          var rows = [];
+          while (i < lines.length && lines[i].trim() && (isPipe(lines[i]) || MD.isSep(lines[i]))) rows.push(lines[i++]);
+          out.push('<div class="table-wrap" tabindex="0">' + MD.table(rows) + '</div>');
+          continue;
+        }
+        if (isList(l)) {
+          var items = [], ordered = /^\s*\d/.test(l), start = ordered ? parseInt(l, 10) : 1;
+          while (i < lines.length && (isList(lines[i]) || (/^\s{2,}\S/.test(lines[i]) && items.length))) {
+            var cur = lines[i++];
+            if (isList(cur) && !/^\s{2,}/.test(cur)) items.push({ text: cur.replace(/^\s*([-*+]|\d+[.)])\s+/, ''), sub: [] });
+            else items[items.length - 1].sub.push(cur.replace(/^\s{2,4}/, ''));
+          }
+          // A lone numbered line between paragraphs is a section heading that lost its "##".
+          var nextBlank = i >= lines.length || !lines[i].trim();
+          if (ordered && items.length === 1 && !items[0].sub.length && nextBlank && items[0].text.length <= 48 && !/[.!?。]$/.test(items[0].text)) {
+            out.push('<h2>' + MD.inline(l.trim()) + '</h2>');
+            continue;
+          }
+          var tag = ordered ? 'ol' : 'ul';
+          out.push('<' + tag + (ordered && start !== 1 ? ' start="' + start + '"' : '') + '>' + items.map(function (it) {
+            return '<li>' + MD.inline(it.text) + (it.sub.length ? MD.render(it.sub.join('\n')) : '') + '</li>';
+          }).join('') + '</' + tag + '>');
+          continue;
+        }
+        var para = [];
+        while (i < lines.length && lines[i].trim() && !/^\s*(```|#{1,6}\s|>)/.test(lines[i]) && !isList(lines[i]) &&
+               !(isPipe(lines[i]) && i + 1 < lines.length && isPipe(lines[i + 1]))) para.push(lines[i++]);
+        // A short single line with no sentence ending, between paragraphs, is a heading too ("회고").
+        if (para.length === 1 && para[0].trim().length <= 20 && !/[.!?。:,)]$/.test(para[0].trim()) && out.length && (i >= lines.length || !lines[i].trim())) {
+          out.push('<h2>' + MD.inline(para[0].trim()) + '</h2>');
+        } else {
+          out.push('<p>' + para.map(MD.inline).join('<br>') + '</p>');
+        }
+      }
+      return out.join('\n');
+    },
+    textOf: function (p) {
+      var c = p.cloneNode(true);
+      $$('br', c).forEach(function (b) { b.replaceWith('\n'); });
+      return c.textContent.replace(/ /g, ' ');
+    },
+    score: function (text) {
+      var lines = text.split('\n'), s = 0, pipes = 0, fence = false;
+      lines.forEach(function (l) {
+        if (/^\s*```/.test(l)) fence = true;
+        if (/^\s*(#{1,6}\s|[-*+]\s+\S|>\s)/.test(l)) s++;
+        if (l.indexOf('|') !== -1 && MD.cells(l).length >= 2) pipes++;
+      });
+      if (/\*\*[^*]+\*\*|`[^`\n]+`/.test(text)) s++;
+      return fence || pipes >= 2 ? s + 3 : s;
+    }
+  };
+
+  function initMarkdown(content) {
+    var root = $('.contents_style', content) || content;
+    // 1) Pipe tables pasted into a code block become real tables.
+    $$('pre', root).forEach(function (pre) {
+      var lines = pre.textContent.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+      if (lines.length >= 2 && lines.every(function (l) { return /^\|.*\|$/.test(l) || MD.isSep(l); })) {
+        var wrap = doc.createElement('div');
+        wrap.className = 'table-wrap'; wrap.setAttribute('tabindex', '0');
+        wrap.innerHTML = MD.table(lines);
+        pre.replaceWith(wrap);
+      }
+    });
+    // 2) Runs of plain paragraphs that are really Markdown text.
+    var plain = function (el) {
+      return el && el.tagName === 'P' && !el.querySelector('img, iframe, video, figure, table, pre, input');
+    };
+    var kids = Array.prototype.slice.call(root.children), run = [];
+    var flush = function () {
+      if (!run.length) return;
+      var text = run.map(MD.textOf).join('\n\n');
+      if (MD.score(text) >= 3) {
+        var box = doc.createElement('div');
+        box.className = 'md-rendered';
+        box.innerHTML = MD.render(text);
+        run[0].parentNode.insertBefore(box, run[0]);
+        run.forEach(function (p) { p.remove(); });
+        if (window.hljs) $$('pre code', box).forEach(function (c) { try { (window.hljs.highlightElement || window.hljs.highlightBlock).call(window.hljs, c); } catch (e) {} });
+      }
+      run = [];
+    };
+    kids.forEach(function (el) { if (plain(el)) run.push(el); else flush(); });
+    flush();
+  }
+
   /* ---------- Article helpers ---------- */
   var LANG = { js: 'JavaScript', javascript: 'JavaScript', ts: 'TypeScript', typescript: 'TypeScript', py: 'Python', python: 'Python',
     java: 'Java', kotlin: 'Kotlin', cpp: 'C++', c: 'C', csharp: 'C#', cs: 'C#', go: 'Go', rust: 'Rust', sql: 'SQL', bash: 'Bash',
@@ -317,7 +461,7 @@
     initPaging();
     initIndex();
     var content = $('.post #article-view');
-    if (content) { initCode(content); initTables(content); initReadTime(content); initToc(content); initProgress(content); }
+    if (content) { initMarkdown(content); initCode(content); initTables(content); initReadTime(content); initToc(content); initProgress(content); }
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init); else init();
 })();

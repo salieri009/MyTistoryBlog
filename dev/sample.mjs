@@ -183,3 +183,21 @@ pages['home-nocover'] = {
     article_rep_thumbnail: i % 2 ? '' : img(240, 180, 150 + i * 20), article_rep_thumbnail_raw_url: img(240, 180, 150 + i * 20),
   })),
 };
+
+// Markdown pasted into Tistory's basic editor: one <p> with <br> line breaks (as seen on the live blog),
+// plus a pipe table pasted into a code block. script.js should turn both into real HTML.
+const mdLines = [
+  '샘플 마크다운 원고를 기본 편집기에 그대로 붙여 넣은 글입니다.', '', '아무튼 시작해 보자.', '',
+  '1. 첫 번째 섹션 제목', '', '설명 문단입니다. 대표적으로 다음과 같은 데이터가 있다.',
+  '- 공정 조건값: 온도, 압력, 진공도 등', '- 설비 상태값: 진동, 소음 등 **별도 센서**로 수집하는 값', '',
+  '2. 두 번째 섹션 제목', '', '서비스들을 연결할 수 있다.', '서비스| 역할', 'IoT Core| MQTT 메시지 수집', 'S3| 대량 데이터 저장', 'Athena| `SQL`로 조회', '',
+  '## 3. 해시가 남아 있는 제목', '', '```python', 'def hello(name):', '    return f"hi {name}"', '```', '',
+  '> 인용으로 붙여 넣은 문장입니다.', '', '세 단계로 정리했다.', '1. 설비 데이터 레이어', '2. IoT 데이터 레이어', '3. AI 하네스 레이어', '',
+  '회고', '', '마지막 문단입니다. [링크](https://example.com)도 있습니다.',
+];
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const mdBody = `<div class="tt_article_useless_p_margin contents_style"><p data-ke-size="size16">${mdLines.map(esc).join('<br>')}</p>
+<pre class="gherkin"><code>| ID     | 역할 | 원하는 것 | MVP |
+| UC-01 | 정비사 | 원인 후보를 순서대로 보고 싶다 | 1 |
+| UC-02 | 정비사 | 몇 건 기준인지 보고 싶다 | 1 |</code></pre></div>`;
+pages['post-md'] = { body_id: 'tt-body-page', article_rep: [article({ article_rep_desc: mdBody, article_rep_title: '[샘플 과정] 최종 프로젝트 2일차:: 마크다운으로 붙여 넣은 글' })] };

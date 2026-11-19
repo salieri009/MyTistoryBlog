@@ -63,6 +63,14 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
   prev/next (series label kept), related, comments. Footer on posts: compact 최근 글 · 인기 글 · 카테고리.
 - Type steps: body 16 → item 18/20 → section 25 (≥ 1.25 each, the detector's flat-hierarchy rule).
 
+## Markdown pasted into the basic editor
+
+The owner drafts posts in Markdown and pastes them into Tistory's basic editor, which keeps them as plain text
+(one `<p>` with `<br>` line breaks; pipe tables end up inside code blocks). `images/script.js` (`initMarkdown`)
+renders those parts client-side: headings (`#`, a lone `1. 제목` line, a short line such as `회고`), lists, quotes,
+fences, tables with or without a separator row, inline code/bold/links. Runs of plain paragraphs are converted only
+when they score as Markdown, so editor-built posts are untouched (checked on live posts 506, 511, 512 vs 508).
+
 ## Tistory policy constraints (checked 2026-11-19)
 
 - Never hide, cover or push away Tistory's ads, including the self-ad Tistory inserts at the top or bottom of
