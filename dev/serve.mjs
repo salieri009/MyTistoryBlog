@@ -11,21 +11,21 @@ const OUT = join(ROOT, 'dev', 'out');
 const PORT = Number(process.env.PORT) || 4173;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.json': 'application/json' };
-const RELOAD = `<script>new EventSource('/__reload').onmessage=()=>location.reload()</script>`;
-const clients = new Set();
+// Live reload by short polling: no long-lived connection, so headless tools (impeccable detect) still reach network idle.
+const RELOAD = `<script>(function(){var v;setInterval(function(){fetch('/__version',{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){if(v&&t!==v)location.reload();v=t}).catch(function(){})},2000)})()</script>`;
+let version = String(Date.now());
 
 function build() {
   const r = spawnSync(process.execPath, [join(ROOT, 'dev', 'render.mjs')], { cwd: ROOT, encoding: 'utf8' });
   process.stdout.write(r.stdout || '');
   if (r.status !== 0) process.stderr.write(r.stderr || '');
-  for (const res of clients) res.write('data: reload\n\n');
+  version = String(Date.now());
 }
 
 createServer(async (req, res) => {
   const url = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-  if (url === '/__reload') {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
-    res.write('\n'); clients.add(res); req.on('close', () => clients.delete(res));
+  if (url === '/__version') {
+    res.writeHead(200, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }).end(version);
     return;
   }
   const PROPOSALS = join(ROOT, 'dev', 'proposals');

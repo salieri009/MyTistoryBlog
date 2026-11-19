@@ -94,7 +94,40 @@
 
   /* ---------- Category counts: Tistory prints "(96)"; show "96" ---------- */
   function initCounts() {
-    $$('.c_cnt').forEach(function (c) { c.textContent = c.textContent.replace(/[()\s]/g, ''); });
+    $$('.c_cnt').forEach(function (c) {
+      c.textContent = c.textContent.replace(/[()\s]/g, '');
+      // A parent with 0 own posts but subcategories would read as "empty"; drop its count.
+      var li = c.closest('li');
+      if (c.textContent === '0' && li && li.querySelector('.sub_category_list li')) c.hidden = true;
+    });
+  }
+
+  /* ---------- Where am I: highlight the current category, center it in the mobile tabs ---------- */
+  function initCurrent() {
+    var here;
+    try { here = decodeURIComponent(location.pathname).replace(/\/+$/, ''); } catch (e) { here = location.pathname; }
+    if (!/\/category\//.test(here)) return;
+    $$('.tt_category a').forEach(function (a) {
+      var path;
+      try { path = decodeURIComponent(a.pathname || '').replace(/\/+$/, ''); } catch (e) { path = a.pathname; }
+      if (path && path === here) {
+        a.classList.add('is-current');
+        a.setAttribute('aria-current', 'page');
+        // In the tabs, a subcategory page marks its top-level parent.
+        var parent = a.closest('.tabs .category_list > li');
+        if (parent && !a.classList.contains('link_item')) { var top = $('.link_item', parent); if (top) top.classList.add('is-current'); }
+      }
+    });
+    var cur = $('.tabs .is-current');
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+
+  /* ---------- Paging: disabled arrows are not links ---------- */
+  function initPaging() {
+    $$('.paging__arrow.no-more-prev, .paging__arrow.no-more-next').forEach(function (a) {
+      a.removeAttribute('href');
+      a.setAttribute('aria-disabled', 'true');
+    });
   }
 
   /* ---------- Index rows: group by year, show mm.dd ---------- */
@@ -246,6 +279,8 @@
     initHero();
     initSeries();
     initCounts();
+    initCurrent();
+    initPaging();
     initIndex();
     var content = $('.post #article-view');
     if (content) { initCode(content); initTables(content); initReadTime(content); initToc(content); initProgress(content); }

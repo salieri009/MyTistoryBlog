@@ -9,7 +9,13 @@ window.addEventListener('load', function () { setTimeout(function () {
     if (!hasText) return;
     var cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || (el.offsetParent === null && cs.position !== 'fixed')) return;
-    var b = bg(el), L1 = lum(rgb(cs.color)), L2 = lum(b.c), r = (Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05);
+    // Effective opacity of the element and its ancestors, blended over the background.
+    var op = 1, n = el;
+    while (n && n.nodeType === 1) { op *= parseFloat(getComputedStyle(n).opacity) || 1; n = n.parentElement; }
+    var b = bg(el), fc = rgb(cs.color);
+    if (op < 1) fc = fc.slice(0, 3).map(function (v, i) { return v * op + b.c[i] * (1 - op); });
+    if (el.getAttribute('aria-disabled') === 'true') return; // inactive UI is exempt (WCAG 1.4.3)
+    var L1 = lum(fc), L2 = lum(b.c), r = (Math.max(L1, L2) + .05) / (Math.min(L1, L2) + .05);
     var large = parseFloat(cs.fontSize) >= 24 || (parseFloat(cs.fontSize) >= 18.66 && parseInt(cs.fontWeight, 10) >= 700);
     if (r < (large ? 3 : 4.5)) out.push(r.toFixed(2) + ' | ' + el.tagName + '.' + el.className + ' | ' + cs.color + ' on ' + b.c.join(',') + ' | ' + el.textContent.trim().slice(0, 30));
   });

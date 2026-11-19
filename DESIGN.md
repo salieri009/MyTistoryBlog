@@ -46,15 +46,30 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
 - Mono (Cascadia Code → JetBrains Mono) only for code and index dates.
 - Scale: 12 / 13 / 14 / 15 / 17 / 18 / 20 / 24 / 30 / 38. Headings 650–800, tracking −0.02 to −0.03em.
 
-## Layout
+## Layout (desktop-first, 1200px container)
 
-- One centered column. Header: title left; blog menu, 카테고리 (panel with the full tree), search, theme right.
-- Home: hero sentence (option `heroText`, `*word*` → accent), profile row with social icons, top-level category
-  tabs, then covers: `index` (default), `featured`, `gallery`.
-- Lists: same tabs + list head + year-grouped index; option `listStyle = summary` adds summaries and thumbnails.
+- Header: title left; blog menu, 카테고리 (panel with the full tree), search, theme right.
+- **≥ 1080px:** two columns. Home and lists: `main | aside 288px` (gap 72px). The aside holds the profile and
+  every sidebar module, with the category tree as the primary wayfinding (current category highlighted).
+  Posts: `article ≤ 760px | contents rail 232px`, centered as one unit (gap 88px); the rail is sticky, starts at
+  the body's top, and ends with "맨 위로".
+- **< 1080px:** one column. Category tabs (edge fade, current tab centered) replace the aside tree; the aside
+  modules stack below the list; posts get a collapsible inline TOC.
+- Home: wide hero sentence (option `heroText`, `*word*` → accent, up to 40px), then covers with real section
+  heads (25px/800 over a rule): `index` (default), `featured`, `gallery`.
+- Lists: list head + year-grouped index; option `listStyle = summary` adds summaries and thumbnails.
 - Post: category, series label, title, meta (author · date · comments · reading time), body, tags,
-  prev/next, related (text list), comments.
-- Footer: every sidebar module (editable in admin) in a 3-column grid, then a bottom line.
+  prev/next (series label kept), related, comments. Footer on posts: compact 최근 글 · 인기 글 · 카테고리.
+- Type steps: body 16 → item 18/20 → section 25 (≥ 1.25 each, the detector's flat-hierarchy rule).
+
+## Tistory policy constraints (checked 2026-11-19)
+
+- Never hide, cover or push away Tistory's ads, including the self-ad Tistory inserts at the top or bottom of
+  the post body (operating policy 2-⑰, notice 2646). The skin styles `.revenue_unit_wrap` spacing only.
+- No anchor/fixed-to-edge ads, offerwalls, interstitials or popups in any implementation, skin code included
+  (notices 2687, 2692, 2707). The sticky contents rail sits in its own column and covers nothing.
+- No forced redirects (policy 2-⑮). Keep `[##_revenue_list_upper_##]` / `lower` in place.
+- Uploading a changed index.xml resets all skin settings and covers: re-check options after every upload.
 
 ## Motion
 
