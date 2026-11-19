@@ -412,6 +412,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   white-space: pre; word-break: normal; overflow-wrap: normal;
 }
 /* highlight.js tokens tuned to the Salieri palette (overrides Tistory's injected theme) */
+.post #article-view pre code [class^="hljs-"], .post #article-view pre code [class*=" hljs-"] { color: var(--code-ink) !important; background: none !important; }
 .post #article-view .hljs-comment, .post #article-view .hljs-quote { color: #94A3B8 !important; font-style: italic; }
 .post #article-view .hljs-keyword, .post #article-view .hljs-selector-tag, .post #article-view .hljs-literal, .post #article-view .hljs-doctag { color: #93C5FD !important; }
 .post #article-view .hljs-string, .post #article-view .hljs-regexp, .post #article-view .hljs-addition, .post #article-view .hljs-meta-string { color: #86EFAC !important; }
