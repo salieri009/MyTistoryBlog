@@ -1,0 +1,17 @@
+# local harness output / packaging
+dev/out/
+dist/
+node_modules/
+
+# personal Claude Code settings (impeccable hook lives here)
+.claude/settings.local.json
+
+# impeccable: keep shared artifacts, ignore runtime state
+.impeccable/*
+!.impeccable/config.json
+!.impeccable/design.json
+!.impeccable/surfaces/
+!.impeccable/critique/
+!.impeccable/live/
+.impeccable/live/*
+!.impeccable/live/config.json

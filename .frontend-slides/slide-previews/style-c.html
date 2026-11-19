@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>살리에리의 인생살이 채널</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@600;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   Include this ENTIRE file in every presentation.
+   Slides are authored at 1920×1080 and scaled as a whole.
+   =========================================== */
+
+/* 1. Lock the browser viewport */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 2. Full-window deck viewport */
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+
+/* 3. Fixed 16:9 design canvas.
+   JavaScript sets transform: translate(...) scale(...). */
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+
+/* 4. Slides stack inside the fixed stage.
+   Content must be laid out at 1920×1080, not reflowed per device. */
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+
+/* 5. Keep media inside authored slide bounds */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* 6. Presentation chrome stays outside the slide design system */
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+/* 7. Print one fixed-size slide per page */
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .deck-controls {
+        display: none !important;
+    }
+}
+
+/* 8. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+:root { --stage-bg:#22262a; --slide-bg:#3a3f44; --sign:#0b6b45; --sign-deep:#08583a; --white:#f7f7f2; --amber:#f2b705; --asphalt:#3a3f44; }
+.slide { font-family:"Pretendard Variable",Pretendard,sans-serif; color:var(--white);
+  background: radial-gradient(120% 90% at 50% 0%, #4a5056 0%, #33383d 55%, #2a2e32 100%); }
+.lane { position:absolute; left:0; right:0; bottom:120px; height:14px; background: repeating-linear-gradient(90deg, var(--white) 0 140px, transparent 140px 260px); opacity:.85; }
+.edge { position:absolute; left:0; right:0; bottom:40px; height:10px; background:var(--amber); }
+.sign { position:absolute; left:120px; top:110px; width:1680px; height:700px; background:var(--sign); border-radius:36px; box-shadow: inset 0 0 0 10px var(--sign), inset 0 0 0 18px var(--white), 0 30px 60px rgba(0,0,0,.35); padding:70px 90px; box-sizing:border-box; display:grid; grid-template-columns: 1.15fr 1fr; gap:60px; }
+.shield { display:inline-flex; align-items:center; justify-content:center; width:150px; height:118px; background:var(--white); color:var(--sign-deep); border-radius: 14px 14px 60px 60px; font:900 64px/1 Overpass,sans-serif; margin-bottom:34px; }
+h1 { margin:0; font-weight:800; font-size:104px; line-height:1.12; letter-spacing:-.01em; word-break:keep-all; }
+.en { font:800 34px/1 Overpass,sans-serif; letter-spacing:.04em; margin-top:22px; opacity:.92; }
+.desc { font-size:27px; line-height:1.6; margin-top:44px; opacity:.9; word-break:keep-all; max-width:760px; }
+.dest { border-left:6px solid rgba(247,247,242,.9); padding-left:56px; display:flex; flex-direction:column; justify-content:center; gap:30px; }
+.row { display:grid; grid-template-columns: 64px 1fr auto; align-items:center; gap:26px; font-size:46px; font-weight:700; }
+.row svg { width:56px; height:56px; }
+.row .km { font:800 48px/1 Overpass,sans-serif; }
+.row .km small { font-size:26px; margin-left:6px; opacity:.85; }
+.post { position:absolute; left:120px; right:120px; top:850px; display:flex; gap:28px; align-items:center; font-size:26px; color:var(--white); opacity:.9; }
+.post b { font:800 22px/1 Overpass,sans-serif; background:var(--amber); color:#1d1d1b; padding:10px 14px; border-radius:6px; letter-spacing:.06em; }
+.reveal { opacity:0; transform:translateY(30px); animation:up .8s cubic-bezier(.2,.7,.1,1) forwards; }
+.d1{animation-delay:.05s}.d2{animation-delay:.25s}.d3{animation-delay:.4s}.d4{animation-delay:.55s}.d5{animation-delay:.7s}
+@keyframes up { to { opacity:1; transform:none; } }
+.lane { animation: drive 2.4s linear infinite; }
+@keyframes drive { from { background-position: 0 0; } to { background-position: -260px 0; } }
+</style>
+</head>
+<body>
+<div class="deck-viewport"><div class="deck-stage">
+<section class="slide active">
+  <div class="sign reveal d1">
+    <div>
+      <div class="shield">512</div>
+      <h1>살리에리의<br>인생살이 채널</h1>
+      <div class="en">SALIERI · LIFE CHANNEL</div>
+      <p class="desc">제가 걸어온 길이 당신에게 있어서 도움이 되는 이정표였으면 좋겠네요.</p>
+    </div>
+    <div class="dest">
+      <div class="row reveal d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M5 11l7-7 7 7"/></svg><span>컴퓨터 공학</span><span class="km">145<small>편</small></span></div>
+      <div class="row reveal d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M13 5l7 7-7 7"/></svg><span>일상이야기</span><span class="km">109<small>편</small></span></div>
+      <div class="row reveal d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4M11 5l-7 7 7 7"/></svg><span>취미이야기</span><span class="km">99<small>편</small></span></div>
+      <div class="row reveal d5"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M8 7h9v9"/></svg><span>호주 살이</span><span class="km">35<small>편</small></span></div>
+    </div>
+  </div>
+  <div class="post reveal d5"><b>NEXT EXIT</b><span>[LG CNS] 최종 프로젝트 3일차 :: 아이디어를 꼬아 간 생각의 순서</span></div>
+  <div class="lane"></div><div class="edge"></div>
+</section>
+</div></div>
+<script>
+(function(){var s=document.querySelector('.deck-stage');function f(){var k=Math.min(innerWidth/1920,innerHeight/1080);s.style.transform='translate('+(innerWidth-1920*k)/2+'px,'+(innerHeight-1080*k)/2+'px) scale('+k+')';}addEventListener('resize',f);f();})();
+</script>
+</body>
+</html>
