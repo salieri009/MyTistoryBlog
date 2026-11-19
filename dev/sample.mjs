@@ -16,12 +16,12 @@ const img = (w, h, hue) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},35%,62%)"/><stop offset="1" stop-color="hsl(${hue + 40},30%,38%)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="${w * 0.72}" cy="${h * 0.32}" r="${h * 0.12}" fill="rgba(255,255,255,.55)"/><path d="M0 ${h} L${w * 0.35} ${h * 0.55} L${w * 0.6} ${h * 0.8} L${w * 0.8} ${h * 0.6} L${w} ${h} Z" fill="rgba(0,0,0,.18)"/></svg>`)}`;
 
 const cat = (name, n, subs = []) =>
-  `<li class=""><a href="#" class="link_item"> ${name} <span class="c_cnt">(${n})</span></a>` +
-  (subs.length ? `<ul class="sub_category_list">${subs.map(([s, c]) => `<li class=""><a href="#" class="link_sub_item"> ${s} <span class="c_cnt">(${c})</span></a></li>`).join('')}</ul>` : '') +
+  `<li class=""><a href="/category/${name}" class="link_item"> ${name} <span class="c_cnt">(${n})</span></a>` +
+  (subs.length ? `<ul class="sub_category_list">${subs.map(([s, c]) => `<li class=""><a href="/category/${name}/${s}" class="link_sub_item"> ${s} <span class="c_cnt">(${c})</span></a></li>`).join('')}</ul>` : '') +
   `</li>`;
 
 const categoryList =
-  `<ul class="tt_category"><li class=""><a href="#" class="link_tit"> 분류 전체보기 <span class="c_cnt">(240)</span></a><ul class="category_list">` +
+  `<ul class="tt_category"><li class=""><a href="/category" class="link_tit"> 분류 전체보기 <span class="c_cnt">(240)</span></a><ul class="category_list">` +
   cat('개발', 96, [['Cloud · DevOps', 24], ['Backend', 31], ['Frontend', 18], ['알고리즘', 23]]) +
   cat('일상', 58, [['여행', 14]]) +
   cat('취미', 47, [['게임', 21], ['프라모델', 9]]) +
@@ -45,7 +45,7 @@ const date = (d) => `2026.11.${String(d).padStart(2, '0')}`;
 
 const listRep = titles.map((t, i) => ({
   list_rep_link: '#', list_rep_title: t, list_rep_title_text: t, list_rep_summary: summary,
-  list_rep_regdate: DATES[i], list_rep_category: ['개발', '개발', '일상', '취미', '어학', '개발'][i],
+  list_rep_regdate: DATES[i], list_rep_category: ['개발/Cloud · DevOps', '개발/Backend', '일상', '취미/게임', '어학/일본어', '개발/Backend'][i],
   list_rep_category_link: '#', list_rep_rp_cnt: [3, 0, 12, 1, 0, 5][i], list_rep_author: '샘플 필명',
   list_rep_thumbnail: i % 3 === 1 ? '' : img(400, 300, 140 + i * 30), list_rep_thumbnail_url: img(400, 300, 140 + i * 30),
 }));
@@ -53,7 +53,7 @@ const listRep = titles.map((t, i) => ({
 const coverItems = titles.map((t, i) => ({
   cover_item_url: '#', cover_item_title: t, cover_item_summary: summary,
   cover_item_thumbnail: i === 2 ? '' : img(480, 360, 120 + i * 35), cover_item_article_info: true,
-  cover_item_category: ['개발', '개발', '일상', '취미', '어학', '개발'][i], cover_item_category_url: '#',
+  cover_item_category: ['개발/Cloud · DevOps', '개발/Backend', '일상', '취미/게임', '어학/일본어', '개발/Backend'][i], cover_item_category_url: '#',
   cover_item_date: `${DATES[i]} 19:30`, cover_item_simple_date: DATES[i], cover_item_comment_count: i * 2,
 }));
 
@@ -130,9 +130,17 @@ export const site = {
   vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: '제가 걸어온 길이 당신에게 도움이 되는 *이정표*였으면 좋겠습니다.', githubUrl: '#', twitterUrl: '#', email: '' },
 };
 
+// What Tistory appends inside the body on the live blog: reaction/share buttons, then
+// "'부모 > 자식' 카테고리의 다른 글" (a Tistory feature, so the skin styles it but never hides it).
+const tistoryTail = `<div class="container_postbtn #post_button_group" style="padding:14px 0;color:var(--ink-3);font-size:13px">[티스토리 공감 · 공유 버튼 자리]</div>
+<div class="another_category another_category_color_gray">
+  <h4>'<a href="/category/개발">개발</a> &gt; <a href="/category/개발/Cloud · DevOps">Cloud · DevOps</a>' 카테고리의 다른 글</h4>
+  <table>${titles.slice(1, 6).map((t, i) => `<tr><th><a href="#">${t}</a>&nbsp;&nbsp;<span>(${i % 3})</span></th><td>${DATES[i + 1]}</td></tr>`).join('')}</table>
+</div>`;
+
 const article = (extra = {}) => ({
   permalink_article_rep: true, index_article_rep: false,
-  article_rep_id: '512', article_rep_link: '#', article_rep_title: titles[0], article_rep_category: '개발', article_rep_category_link: '#',
+  article_rep_id: '512', article_rep_link: '#', article_rep_title: titles[0], article_rep_category: '개발/Cloud · DevOps', article_rep_category_link: '/category/개발/Cloud · DevOps',
   article_rep_author: '샘플 필명', article_rep_date: '2026.11.18 19:54', article_rep_simple_date: '2026.11.18', article_rep_desc: articleBody,
   rp_count: true, article_rep_rp_cnt: 3, ad_div: false,
   tag_label: { tag_label_rep: ['<a href="#" rel="tag">kubernetes</a>', '<a href="#" rel="tag">배포</a>', '<a href="#" rel="tag">회고</a>'].join(', ') },
@@ -154,7 +162,7 @@ export const pages = {
     ] },
   },
   category: {
-    body_id: 'tt-body-category',
+    body_id: 'tt-body-category', path: '/category/개발',
     list: { list_conform: '개발', list_count: 96, list_description: '카테고리 설명이 있으면 여기에 표시됩니다.', list_style: '', list_empty: false, list_rep: listRep },
     paging,
   },
@@ -162,9 +170,10 @@ export const pages = {
     body_id: 'tt-body-search', search_text: '배포',
     list: { list_conform: '배포', list_count: 0, list_description: '블로그 설명', list_style: '', list_empty: true, list_rep: [] },
   },
-  post: { body_id: 'tt-body-page', article_rep: [article()] },
+  post: { body_id: 'tt-body-page', article_rep: [article({ article_rep_desc: articleBody + tistoryTail })] },
+  'post-related': { body_id: 'tt-body-page', article_rep: [article()] },
   'post-dark': { body_id: 'tt-body-page', article_rep: [article()], vars: { colorScheme: 'dark' } },
-  'category-summary': { body_id: 'tt-body-category', list: { list_conform: '개발', list_count: 96, list_description: '카테고리 설명이 있으면 여기에 표시됩니다.', list_style: '', list_empty: false, list_rep: listRep }, paging, vars: { listStyle: 'summary' } },
+  'category-summary': { body_id: 'tt-body-category', path: '/category/개발/Backend', list: { list_conform: 'Backend', list_count: 96, list_description: '카테고리 설명이 있으면 여기에 표시됩니다.', list_style: '', list_empty: false, list_rep: listRep }, paging, vars: { listStyle: 'summary' } },
   protected: {
     body_id: 'tt-body-page',
     article_protected: { article_rep_title: '보호된 샘플 글', article_rep_category: '일상', article_rep_category_link: '#', article_rep_date: '2026.11.10 10:00', article_password: 'pw', article_dissolve: 'return false;' },

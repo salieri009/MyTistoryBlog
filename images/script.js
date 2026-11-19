@@ -105,7 +105,8 @@
   /* ---------- Where am I: highlight the current category, center it in the mobile tabs ---------- */
   function initCurrent() {
     var here;
-    try { here = decodeURIComponent(location.pathname).replace(/\/+$/, ''); } catch (e) { here = location.pathname; }
+    var path = window.__SKIN_PATH__ || location.pathname; // __SKIN_PATH__: set only by the local preview harness
+    try { here = decodeURIComponent(path).replace(/\/+$/, ''); } catch (e) { here = path; }
     if (!/\/category\//.test(here)) return;
     $$('.tt_category a').forEach(function (a) {
       var path;
@@ -120,6 +121,95 @@
     });
     var cur = $('.tabs .is-current');
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+
+  /* ---------- Post head: "부모/자식" category text becomes a two-step breadcrumb ---------- */
+  function initCrumbs() {
+    $$('.js-crumbs').forEach(function (a) {
+      var parts = a.textContent.split('/').map(function (t) { return t.trim(); }).filter(Boolean);
+      if (parts.length < 2) return;
+      var nav = a.parentNode, href = a.getAttribute('href') || '';
+      var segs = href.split('/');
+      var parentHref = segs.length > 3 ? segs.slice(0, -1).join('/') : href; // /category/부모/자식 -> /category/부모
+      var chevron = '<svg class="crumbs__sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+      var parent = doc.createElement('a');
+      parent.className = 'crumbs__link crumbs__link--parent';
+      parent.href = parentHref;
+      parent.textContent = parts[0];
+      a.textContent = parts[parts.length - 1];
+      nav.insertBefore(parent, a);
+      parent.insertAdjacentHTML('afterend', chevron);
+    });
+  }
+
+  /* ---------- Rows: show the deepest category only ("컴퓨터 공학/Java" -> "Java") ---------- */
+  function initCatLabels() {
+    $$('.idx__cat, .feat__cat').forEach(function (el) {
+      var t = el.textContent.trim();
+      if (t.indexOf('/') === -1) return;
+      el.title = t;
+      el.textContent = t.split('/').pop().trim();
+    });
+  }
+
+  /* ---------- Category pages: chips for the current category's subcategories (or its siblings) ---------- */
+  function initSubnav() {
+    if (doc.body.id !== 'tt-body-category') return;
+    var head = $('.list__head'), cur = $('.panel__tree a.is-current');
+    if (!head || !cur || $('.subnav')) return;
+    var li = cur.closest('li'), top, kids;
+    if (cur.classList.contains('link_sub_item')) {
+      var parentLi = li.parentNode.closest('li');
+      top = parentLi && $('.link_item', parentLi);
+      kids = parentLi ? $$('.sub_category_list > li > a', parentLi) : [];
+    } else if (cur.classList.contains('link_item')) {
+      top = cur;
+      kids = $$('.sub_category_list > li > a', li);
+    } else {
+      top = cur;
+      kids = $$('.category_list > li > a', li);
+    }
+    if (!top || !kids.length) return;
+    var label = function (a) {
+      var c = a.cloneNode(true);
+      $$('.c_cnt, img', c).forEach(function (x) { x.remove(); });
+      return c.textContent.trim();
+    };
+    var count = function (a) { var c = $('.c_cnt', a); return c && !c.hidden ? c.textContent : ''; };
+    var nav = doc.createElement('nav');
+    nav.className = 'subnav';
+    nav.setAttribute('aria-label', '하위 카테고리');
+    [top].concat(kids).forEach(function (a, i) {
+      var chip = doc.createElement('a');
+      chip.href = a.getAttribute('href');
+      chip.className = 'subnav__chip' + (a === cur ? ' is-current' : '');
+      if (a === cur) chip.setAttribute('aria-current', 'page');
+      chip.textContent = i === 0 ? '전체' : label(a);
+      var n = count(a);
+      if (n) { var b = doc.createElement('span'); b.className = 'subnav__count'; b.textContent = n; chip.appendChild(b); }
+      nav.appendChild(chip);
+    });
+    head.parentNode.insertBefore(nav, head.nextSibling);
+  }
+
+  /* ---------- Tistory's own end-of-post blocks ----------
+     Tistory can insert "'부모 > 자식' 카테고리의 다른 글" at the end of the body. It is Tistory content, so the skin
+     never hides or moves it: it gets the skin's list styling, and the skin's own same-category list steps aside
+     so readers do not see the same list twice. */
+  function prepTistoryBlocks() {
+    var box = $('.post #article-view .another_category');
+    if (!box) return;
+    doc.body.classList.add('has-tistory-related');
+    $$('th a', box).forEach(function (a) { a.classList.add('js-series'); });
+    // Tistory prints its title as <h4> right after the post's <h2>s, skipping a level. Same text, same place,
+    // only the element changes so the outline reads "post sections -> other posts in this category".
+    var h4 = $('h4', box);
+    if (h4) {
+      var h2 = doc.createElement('h2');
+      h2.className = 'another_category__title';
+      while (h4.firstChild) h2.appendChild(h4.firstChild);
+      h4.replaceWith(h2);
+    }
   }
 
   /* ---------- Paging: disabled arrows are not links ---------- */
@@ -462,9 +552,13 @@
     initTheme();
     initHeader();
     initHero();
+    prepTistoryBlocks();
     initSeries();
     initCounts();
     initCurrent();
+    initSubnav();
+    initCrumbs();
+    initCatLabels();
     initPaging();
     initIndex();
     var content = $('.post #article-view');

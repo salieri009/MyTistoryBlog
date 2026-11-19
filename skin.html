@@ -217,10 +217,10 @@
         <s_permalink_article_rep>
           <article class="post">
             <header class="post__head">
-              <a class="post__cat" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
+              <nav class="crumbs" aria-label="카테고리"><a class="crumbs__link js-crumbs" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a></nav>
               <h1 class="post__title js-series">[##_article_rep_title_##]</h1>
               <div class="post__meta">
-                <span>[##_article_rep_author_##]</span>
+                <span class="byline"><img class="byline__img" src="[##_image_##]" alt="" loading="lazy">[##_article_rep_author_##]</span>
                 <time>[##_article_rep_date_##]</time>
                 <s_rp_count><a href="#comments">댓글 [##_article_rep_rp_cnt_##]</a></s_rp_count>
                 <span class="js-readtime" hidden></span>
@@ -245,7 +245,7 @@
               <div class="post__tags"><h2 class="sr-only">태그</h2><div class="tags">[##_tag_label_rep_##]</div></div>
             </s_tag_label>
 
-            <nav class="post-nav" aria-label="이전 글과 다음 글">
+            <nav class="post-nav" aria-label="이어서 읽기">
               <s_article_prev>
                 <a class="post-nav__item" href="[##_article_prev_link_##]">
                   <span class="post-nav__label">이전 글</span>
@@ -269,15 +269,29 @@
                   <s_article_related_rep>
                     <li>
                       <a href="[##_article_related_rep_link_##]">
-                        <s_article_related_rep_thumbnail><img src="[##_article_related_rep_thumbnail_link_##]" alt="" loading="lazy"></s_article_related_rep_thumbnail>
-                        <strong class="js-series">[##_article_related_rep_title_##]</strong>
-                        <time>[##_article_related_rep_date_##]</time>
+                        <span class="related__media"><s_article_related_rep_thumbnail><img src="[##_article_related_rep_thumbnail_link_##]" alt="" loading="lazy"></s_article_related_rep_thumbnail></span>
+                        <strong class="related__name js-series">[##_article_related_rep_title_##]</strong>
+                        <time class="related__date">[##_article_related_rep_date_##]</time>
                       </a>
                     </li>
                   </s_article_related_rep>
                 </ul>
               </section>
             </s_article_related>
+
+            <section class="author" aria-label="글쓴이">
+              <img class="author__img" src="[##_image_##]" alt="" loading="lazy">
+              <div class="author__body">
+                <strong class="author__name">[##_blogger_##]</strong>
+                <p class="author__desc">[##_desc_##]</p>
+                <p class="author__links">
+                  <s_if_var_githubUrl><a href="[##_var_githubUrl_##]" target="_blank" rel="noopener">GitHub</a></s_if_var_githubUrl>
+                  <s_if_var_email><a href="mailto:[##_var_email_##]">이메일</a></s_if_var_email>
+                  <a href="[##_rss_url_##]">RSS 구독</a>
+                  <a class="author__ask" href="#comments">댓글로 질문하기</a>
+                </p>
+              </div>
+            </section>
 
             <section class="comments" id="comments" aria-label="댓글">
               <s_rp>[##_comment_group_##]</s_rp>
@@ -290,7 +304,7 @@
       <s_article_protected>
         <article class="post">
           <header class="post__head">
-            <a class="post__cat" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
+            <nav class="crumbs" aria-label="카테고리"><a class="crumbs__link js-crumbs" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a></nav>
             <h1 class="post__title">[##_article_rep_title_##]</h1>
             <div class="post__meta"><time>[##_article_rep_date_##]</time></div>
           </header>
@@ -408,22 +422,12 @@
         <div class="modules modules--aside">
           <s_sidebar>
             <s_sidebar_element>
-              <!-- 최근 글 -->
-              <section class="module"><h2 class="module__title">최근 글</h2>
-                <ul class="module__list"><s_rctps_rep><li><a href="[##_rctps_rep_link_##]" class="js-series">[##_rctps_rep_title_##]</a></li></s_rctps_rep></ul>
-              </section>
-            </s_sidebar_element>
-            <s_sidebar_element>
-              <!-- 인기 글 -->
-              <section class="module"><h2 class="module__title">인기 글</h2>
-                <ol class="module__list module__list--ranked"><s_rctps_popular_rep><li><a href="[##_rctps_rep_link_##]" class="js-series">[##_rctps_rep_title_##]</a></li></s_rctps_popular_rep></ol>
-              </section>
-            </s_sidebar_element>
-            <s_sidebar_element>
-              <!-- 최근 댓글 -->
-              <section class="module"><h2 class="module__title">최근 댓글</h2>
-                <ul class="module__list"><s_rctrp_rep><li><a href="[##_rctrp_rep_link_##]">[##_rctrp_rep_desc_##]</a><span class="module__meta">[##_rctrp_rep_name_##]</span></li></s_rctrp_rep></ul>
-              </section>
+              <!-- 공지사항 -->
+              <s_rct_notice>
+                <section class="module module--notice"><h2 class="module__title">공지사항</h2>
+                  <ul class="module__list"><s_rct_notice_rep><li><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></li></s_rct_notice_rep></ul>
+                </section>
+              </s_rct_notice>
             </s_sidebar_element>
             <s_sidebar_element>
               <!-- 카테고리 -->
@@ -432,34 +436,44 @@
               </section>
             </s_sidebar_element>
             <s_sidebar_element>
-              <!-- 공지사항 -->
-              <s_rct_notice>
-                <section class="module"><h2 class="module__title">공지사항</h2>
-                  <ul class="module__list"><s_rct_notice_rep><li><a href="[##_notice_rep_link_##]">[##_notice_rep_title_##]</a></li></s_rct_notice_rep></ul>
-                </section>
-              </s_rct_notice>
+              <!-- 인기 글 -->
+              <section class="module module--popular"><h2 class="module__title">인기 글</h2>
+                <ol class="module__list module__list--ranked"><s_rctps_popular_rep><li><a href="[##_rctps_rep_link_##]" class="js-series">[##_rctps_rep_title_##]</a></li></s_rctps_popular_rep></ol>
+              </section>
+            </s_sidebar_element>
+            <s_sidebar_element>
+              <!-- 최근 글 -->
+              <section class="module module--recent"><h2 class="module__title">최근 글</h2>
+                <ul class="module__list"><s_rctps_rep><li><a href="[##_rctps_rep_link_##]" class="js-series">[##_rctps_rep_title_##]</a></li></s_rctps_rep></ul>
+              </section>
+            </s_sidebar_element>
+            <s_sidebar_element>
+              <!-- 최근 댓글 -->
+              <section class="module module--comments"><h2 class="module__title">최근 댓글</h2>
+                <ul class="module__list"><s_rctrp_rep><li><a href="[##_rctrp_rep_link_##]">[##_rctrp_rep_desc_##]</a><span class="module__meta">[##_rctrp_rep_name_##]</span></li></s_rctrp_rep></ul>
+              </section>
             </s_sidebar_element>
             <s_sidebar_element>
               <!-- 태그 -->
-              <section class="module"><h2 class="module__title">태그</h2>
+              <section class="module module--tags"><h2 class="module__title">태그</h2>
                 <div class="tag-cloud tag-cloud--small"><s_random_tags><a href="[##_tag_link_##]" class="[##_tag_class_##]">[##_tag_name_##]</a></s_random_tags></div>
               </section>
             </s_sidebar_element>
             <s_sidebar_element>
               <!-- 글 보관함 -->
-              <section class="module"><h2 class="module__title">보관함</h2>
+              <section class="module module--archive"><h2 class="module__title">보관함</h2>
                 <ul class="module__list module__list--pairs"><s_archive_rep><li><a href="[##_archive_rep_link_##]">[##_archive_rep_date_##]</a><span class="module__meta">[##_archive_rep_count_##]</span></li></s_archive_rep></ul>
               </section>
             </s_sidebar_element>
             <s_sidebar_element>
               <!-- 링크 -->
-              <section class="module"><h2 class="module__title">링크</h2>
+              <section class="module module--links"><h2 class="module__title">링크</h2>
                 <ul class="module__list"><s_link_rep><li><a href="[##_link_url_##]" target="_blank" rel="noopener">[##_link_site_##]</a></li></s_link_rep></ul>
               </section>
             </s_sidebar_element>
             <s_sidebar_element>
               <!-- 방문자 수 -->
-              <section class="module"><h2 class="module__title">방문자</h2>
+              <section class="module module--visits"><h2 class="module__title">방문자</h2>
                 <dl class="visits"><div><dt>전체</dt><dd>[##_count_total_##]</dd></div><div><dt>오늘</dt><dd>[##_count_today_##]</dd></div><div><dt>어제</dt><dd>[##_count_yesterday_##]</dd></div></dl>
               </section>
             </s_sidebar_element>

@@ -63,6 +63,24 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
   prev/next (series label kept), related, comments. Footer on posts: compact 최근 글 · 인기 글 · 카테고리.
 - Type steps: body 16 → item 18/20 → section 25 (≥ 1.25 each, the detector's flat-hierarchy rule).
 
+## User flows → layout
+
+Most visitors land on a post (search, shared links, camp submissions), not on the home page.
+
+| Flow | Who | Layout answer |
+|---|---|---|
+| Land on a post, confirm it is relevant | search visitor, grader | Breadcrumb `부모 › 자식` (both linked), series label, title, byline with avatar, date, comments, reading time; TOC rail/sheet |
+| Finish, keep reading | search visitor | End of post: tags → prev/next ("다음 글" first on phones) → same-category posts with thumbnails |
+| Who wrote this, ask a question | grader, recruiter | Author card (avatar, name, 2-line intro, GitHub/이메일/RSS, "댓글로 질문하기") right before comments |
+| Come back, see what is new | returning reader | Shorter hero, latest-posts index first; the aside's own "최근 글" is hidden on home (duplicate) |
+| Browse a topic | hobby/travel reader | Subcategory chips under the list head (current shaded), current category in the aside tree, rows show the deepest category only |
+
+Tistory may append "'부모 > 자식' 카테고리의 다른 글" inside the body. It is Tistory content: the skin restyles it like
+its own lists and turns its `<h4>` title into an `<h2>` (same text, same place) so the outline does not skip a level,
+and the skin's own same-category grid steps aside (`.has-tistory-related`) so the list is not shown twice.
+Aside default order: profile → 공지 → 카테고리 → 인기 글 → 최근 글 → 최근 댓글 → 태그 → 보관함 → 링크 → 방문자
+(reorderable in 꾸미기 → 사이드바).
+
 ## Markdown pasted into the basic editor
 
 The owner drafts posts in Markdown and pastes them into Tistory's basic editor, which keeps them as plain text

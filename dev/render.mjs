@@ -73,7 +73,9 @@ const index = [];
 for (const [file, page] of Object.entries(pages)) {
   const ctx = { ...site, ...page, vars: { ...site.vars, ...(page.vars || {}) } };
   let html = render(skin, ctx);
-  html = html.replace('<head>', `<head>\n${injectedHead}`);
+  // page.path stands in for location.pathname (e.g. a category URL) so path-aware UI can be previewed
+  const pathHook = page.path ? `\n<script>window.__SKIN_PATH__ = ${JSON.stringify(page.path)};</script>` : '';
+  html = html.replace('<head>', `<head>\n${injectedHead}${pathHook}`);
   // Sample images are data: URIs; Tistory's thumbnail resizer can't fetch those, so unwrap them locally.
   html = html.replace(/\/\/i1\.daumcdn\.net\/thumb\/[^"?]+\/\?fname=(data:)/g, '$1');
   writeFileSync(join(OUT, `${file}.html`), html);
