@@ -156,7 +156,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .intro__text { margin: 0; max-width: 880px; font-size: clamp(26px, 3.2vw, 40px); line-height: 1.5; font-weight: 650; letter-spacing: -.025em; white-space: pre-line; }
 .intro__text em { font-style: normal; color: var(--accent); }
 .intro__text.is-long { font-size: clamp(19px, 2vw, 24px); line-height: 1.65; max-width: 760px; }
-.me { display: flex; align-items: center; gap: 10px; margin-top: 28px; font-size: 14px; color: var(--ink-2); }
+.me { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 14px; color: var(--ink-2); }
+.intro__sub { margin: 16px 0 0; max-width: 880px; font-size: 16px; line-height: 1.6; color: var(--ink-2); }
+.intro__links { display: flex; flex-wrap: wrap; gap: 0 18px; margin-top: 10px; font-size: 14px; }
+.intro__links a { display: inline-flex; align-items: center; min-height: 40px; color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.intro__links a:hover { color: var(--accent); text-decoration-color: currentColor; }
 @media (min-width: 1080px) { .intro .me { display: none; } .intro { padding-top: 56px; padding-bottom: 8px; } }
 /* Home on phones/tablets already shows the profile row under the hero: no second profile at the bottom */
 @media (max-width: 1079.98px) { #tt-body-index .aside .profile { display: none; } }
@@ -168,7 +172,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .me__links a { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 8px; color: var(--ink-3); }
 .me__links a:hover { color: var(--ink); background: var(--soft); }
 .me__links svg { width: 18px; height: 18px; }
-@media (max-width: 599.98px) { .intro { padding: 32px 0 28px; } .intro__text { font-size: 23px; } .intro__text.is-long { font-size: 19px; } }
+@media (max-width: 599.98px) { .intro { padding-top: 28px; padding-bottom: 24px; } .intro__text { font-size: 23px; } .intro__text.is-long { font-size: 19px; } }
 
 /* Category tabs: index + lists only */
 .tabs { display: none; }

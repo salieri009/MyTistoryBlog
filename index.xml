@@ -83,7 +83,15 @@
         <description><![CDATA[ 홈 맨 위에 크게 보이는 문장입니다. *단어*처럼 별표로 감싸면 파란색으로 강조됩니다. 비우면 블로그 설명을 씁니다. ]]></description>
         <type>STRING</type>
         <option />
-        <default>제가 걸어온 길이 당신에게 도움이 되는 *이정표*였으면 좋겠습니다.</default>
+        <default>AI 서비스를 받치는 *인프라*를 공부하고, 걸어온 길을 기록합니다.</default>
+      </variable>
+      <variable>
+        <name>heroSub</name>
+        <label><![CDATA[ 한 줄 소개 ]]></label>
+        <description><![CDATA[ 소개 문장 아래 작은 글씨로 보입니다. 지향 분야, 학력, 지금 하는 일 등. 비우면 숨깁니다. ]]></description>
+        <type>STRING</type>
+        <option />
+        <default>Cloud · DevOps · Platform Engineering · UTS 정보기술 학사 · LG CNS AM INSPIRE CAMP 6기</default>
       </variable>
       <variable>
         <name>githubUrl</name>
@@ -91,6 +99,27 @@
         <type>STRING</type>
         <option />
         <default>https://github.com/salieri009</default>
+      </variable>
+      <variable>
+        <name>portfolioUrl</name>
+        <label><![CDATA[ 포트폴리오 주소 ]]></label>
+        <type>STRING</type>
+        <option />
+        <default>https://salieri009.studio</default>
+      </variable>
+      <variable>
+        <name>velogUrl</name>
+        <label><![CDATA[ velog 주소 ]]></label>
+        <type>STRING</type>
+        <option />
+        <default>https://velog.io/@salieri009</default>
+      </variable>
+      <variable>
+        <name>linkedinUrl</name>
+        <label><![CDATA[ LinkedIn 주소 ]]></label>
+        <type>STRING</type>
+        <option />
+        <default>https://www.linkedin.com/in/jungwookvan/</default>
       </variable>
       <variable>
         <name>twitterUrl</name>

@@ -56,7 +56,9 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
 - **< 1080px:** one column. Category tabs (edge fade, current tab centered) replace the aside tree; the aside
   modules stack below the list; posts get a collapsible inline TOC, and while reading, a bottom-right
   current-section button (44px) that opens the contents as a bottom sheet with "맨 위로".
-- Home: wide hero sentence (option `heroText`, `*word*` → accent, up to 40px), then covers with real section
+- Home: the owner's profile up front: hero sentence (option `heroText`, default from the GitHub profile's positioning,
+  `*word*` → accent, up to 40px), a one-line intro (`heroSub`: field · degree · current programme) and profile links
+  (GitHub, 포트폴리오, velog, LinkedIn, X, 이메일, RSS; each hidden when its option is empty); then covers with real section
   heads (25px/800 over a rule): `index` (default), `featured`, `gallery`.
 - Lists: list head + year-grouped index; option `listStyle = summary` adds summaries and thumbnails.
 - Post: category, series label, title, meta (author · date · comments · reading time), body, tags,

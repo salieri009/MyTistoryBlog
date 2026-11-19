@@ -127,7 +127,7 @@ export const site = {
   search_name: 'search', search_text: '', search_onclick_submit: "location.href='#'",
   revenue_list_upper: '', revenue_list_lower: '', count_total: '123,456', count_today: '321', count_yesterday: '654',
   ...sidebar,
-  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: '제가 걸어온 길이 당신에게 도움이 되는 *이정표*였으면 좋겠습니다.', githubUrl: '#', twitterUrl: '#', email: '' },
+  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: 'AI 서비스를 받치는 *인프라*를 공부하고, 걸어온 길을 기록합니다.', heroSub: 'Cloud · DevOps · Platform Engineering · UTS 정보기술 학사 · LG CNS AM INSPIRE CAMP 6기', githubUrl: '#', portfolioUrl: '#', velogUrl: '#', linkedinUrl: '#', twitterUrl: '#', email: '' },
 };
 
 // What Tistory appends inside the body on the live blog: reaction/share buttons, then
