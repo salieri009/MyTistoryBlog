@@ -31,6 +31,16 @@ const coverNames = [...xml.matchAll(/<cover>[\s\S]*?<\/cover>/g)].pop()?.[0].mat
 for (const c of coverNames) if (!new RegExp(`<s_cover name=['"]${c}['"]`).test(skin)) errors.push(`index.xml cover "${c}" has no <s_cover name='${c}'>`);
 
 if (!/<s_t3>[\s\S]*<\/s_t3>/.test(skin)) errors.push('<s_t3> wrapper missing (Tistory common scripts)');
+
+// style.css: braces must balance and never go negative (a stray "}" silently kills the next rule)
+const css = readFileSync(join(ROOT, 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
+let depth = 0, line = 1;
+for (const ch of css) {
+  if (ch === '\n') line++;
+  if (ch === '{') depth++;
+  if (ch === '}' && --depth < 0) { errors.push(`style.css: stray "}" near line ${line}`); depth = 0; }
+}
+if (depth !== 0) errors.push(`style.css: ${depth} unclosed "{"`);
 if (!/^<\?xml[^>]*\?>\s*<skin>[\s\S]*<\/skin>\s*$/.test(xml)) errors.push('index.xml is not a single <skin> document');
 
 if (errors.length) { console.error('skin check failed:\n- ' + errors.join('\n- ')); process.exit(1); }

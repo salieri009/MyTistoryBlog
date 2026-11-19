@@ -163,7 +163,8 @@
     inline: function (s) {
       var codes = [];
       s = MD.esc(s).replace(/`([^`]+)`/g, function (_, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
-      s = s.replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/|#)[^\s)]+)\)/g, '<a href="$2">$1</a>')
+      s = s.replace(/!\[([^\]]*)\]\(((?:https?:)?\/\/[^\s)]+|\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
+        .replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/|#)[^\s)]+)\)/g, '<a href="$2">$1</a>')
         .replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2">$2</a>')
         .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+)__/g, '<strong>$1</strong>')
         .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
@@ -238,6 +239,12 @@
         var para = [];
         while (i < lines.length && lines[i].trim() && !/^\s*(```|#{1,6}\s|>)/.test(lines[i]) && !isList(lines[i]) &&
                !(isPipe(lines[i]) && i + 1 < lines.length && isPipe(lines[i + 1]))) para.push(lines[i++]);
+        // A line that is only an image becomes a figure; alt text doubles as the caption.
+        var imgOnly = para.length === 1 && para[0].trim().match(/^!\[([^\]]*)\]\(([^\s)]+)\)$/);
+        if (imgOnly) {
+          out.push('<figure class="imageblock alignCenter">' + MD.inline(para[0].trim()) + (imgOnly[1] ? '<figcaption>' + MD.esc(imgOnly[1]) + '</figcaption>' : '') + '</figure>');
+          continue;
+        }
         // A short single line with no sentence ending, between paragraphs, is a heading too ("회고").
         if (para.length === 1 && para[0].trim().length <= 20 && !/[.!?。:,)]$/.test(para[0].trim()) && out.length && (i >= lines.length || !lines[i].trim())) {
           out.push('<h2>' + MD.inline(para[0].trim()) + '</h2>');
