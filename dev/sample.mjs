@@ -127,7 +127,7 @@ export const site = {
   search_name: 'search', search_text: '', search_onclick_submit: "location.href='#'",
   revenue_list_upper: '', revenue_list_lower: '', count_total: '123,456', count_today: '321', count_yesterday: '654',
   ...sidebar,
-  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: 'AI 서비스를 받치는 *인프라*를 공부하고, 걸어온 길을 기록합니다.', heroSub: 'Cloud · DevOps · Platform Engineering · UTS 정보기술 학사 · LG CNS AM INSPIRE CAMP 6기', githubUrl: '#', portfolioUrl: '#', velogUrl: '#', linkedinUrl: '#', twitterUrl: '#', email: '' },
+  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: '', heroSub: '', githubUrl: '#', portfolioUrl: '#', velogUrl: '#', linkedinUrl: '#', twitterUrl: '#', email: '' },
 };
 
 // What Tistory appends inside the body on the live blog: reaction/share buttons, then
@@ -210,3 +210,6 @@ const mdBody = `<div class="tt_article_useless_p_margin contents_style"><p data-
 | UC-01 | 정비사 | 원인 후보를 순서대로 보고 싶다 | 1 |
 | UC-02 | 정비사 | 몇 건 기준인지 보고 싶다 | 1 |</code></pre></div>`;
 pages['post-md'] = { body_id: 'tt-body-page', article_rep: [article({ article_rep_desc: mdBody, article_rep_title: '[샘플 과정] 최종 프로젝트 2일차:: 마크다운으로 붙여 넣은 글' })] };
+
+// Home with an intro sentence filled in (the default ships empty).
+pages['home-hero'] = { ...pages.home, vars: { heroText: '소개 문장 자리입니다. *강조*할 단어는 별표로 감쌉니다.', heroSub: '한 줄 소개 자리' } };

@@ -67,27 +67,13 @@
     </div>
   </header>
 
-    <!-- ===== Home intro (index only): who I am in one sentence, one line, and where to find me ===== -->
+    <!-- ===== Home intro (index only): renders only when the owner writes a sentence in 스킨 옵션 > 소개 문장 ===== -->
+    <s_if_var_heroText>
     <section class="intro wrap wrap--wide">
-      <div class="me">
-        <img class="me__img" src="[##_image_##]" alt="" loading="lazy">
-        <span class="me__name">[##_blogger_##]</span>
-      </div>
-      <p class="intro__text js-hero">
-        <s_if_var_heroText>[##_var_heroText_##]</s_if_var_heroText>
-        <s_not_var_heroText>[##_desc_##]</s_not_var_heroText>
-      </p>
+      <p class="intro__text js-hero">[##_var_heroText_##]</p>
       <s_if_var_heroSub><p class="intro__sub">[##_var_heroSub_##]</p></s_if_var_heroSub>
-      <nav class="intro__links" aria-label="프로필 링크">
-        <s_if_var_githubUrl><a href="[##_var_githubUrl_##]" target="_blank" rel="noopener">GitHub</a></s_if_var_githubUrl>
-        <s_if_var_portfolioUrl><a href="[##_var_portfolioUrl_##]" target="_blank" rel="noopener">포트폴리오</a></s_if_var_portfolioUrl>
-        <s_if_var_velogUrl><a href="[##_var_velogUrl_##]" target="_blank" rel="noopener">velog</a></s_if_var_velogUrl>
-        <s_if_var_linkedinUrl><a href="[##_var_linkedinUrl_##]" target="_blank" rel="noopener">LinkedIn</a></s_if_var_linkedinUrl>
-        <s_if_var_twitterUrl><a href="[##_var_twitterUrl_##]" target="_blank" rel="noopener">X</a></s_if_var_twitterUrl>
-        <s_if_var_email><a href="mailto:[##_var_email_##]">이메일</a></s_if_var_email>
-        <a href="[##_rss_url_##]">RSS</a>
-      </nav>
     </section>
+    </s_if_var_heroText>
 
   <div class="page wrap wrap--wide">
     <main id="main" class="main" tabindex="-1">
@@ -424,6 +410,15 @@
           <div>
             <strong class="profile__name">[##_blogger_##]</strong>
             <p class="profile__desc">[##_desc_##]</p>
+            <p class="profile__links">
+              <s_if_var_githubUrl><a href="[##_var_githubUrl_##]" target="_blank" rel="noopener">GitHub</a></s_if_var_githubUrl>
+              <s_if_var_portfolioUrl><a href="[##_var_portfolioUrl_##]" target="_blank" rel="noopener">포트폴리오</a></s_if_var_portfolioUrl>
+              <s_if_var_velogUrl><a href="[##_var_velogUrl_##]" target="_blank" rel="noopener">velog</a></s_if_var_velogUrl>
+              <s_if_var_linkedinUrl><a href="[##_var_linkedinUrl_##]" target="_blank" rel="noopener">LinkedIn</a></s_if_var_linkedinUrl>
+              <s_if_var_twitterUrl><a href="[##_var_twitterUrl_##]" target="_blank" rel="noopener">X</a></s_if_var_twitterUrl>
+              <s_if_var_email><a href="mailto:[##_var_email_##]">이메일</a></s_if_var_email>
+              <a href="[##_rss_url_##]">RSS</a>
+            </p>
           </div>
         </section>
         <div class="modules modules--aside">
