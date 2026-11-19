@@ -1,0 +1,17 @@
+{
+  "name": "tistory-skin-ijeongpyo",
+  "version": "2.0.0",
+  "private": true,
+  "description": "이정표 (Signpost) — Tistory skin with a local preview harness",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev/serve.mjs",
+    "build": "node dev/render.mjs",
+    "check": "node dev/render.mjs && node dev/check-skin.mjs",
+    "package": "node dev/render.mjs && node dev/check-skin.mjs && node dev/package.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}
