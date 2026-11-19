@@ -466,6 +466,25 @@
     </aside>
   </div>
 
+  <!-- Phones/tablets on long posts: current section button + contents sheet (filled by script.js) -->
+  <div class="toc-fab" hidden>
+    <button type="button" class="toc-fab__btn js-sheet-open" aria-controls="toc-sheet" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h13"/></svg>
+      <span class="toc-fab__label">목차</span>
+    </button>
+  </div>
+  <div class="toc-sheet" id="toc-sheet" role="dialog" aria-modal="true" aria-label="목차" hidden>
+    <div class="toc-sheet__backdrop js-sheet-close"></div>
+    <div class="toc-sheet__panel">
+      <div class="toc-sheet__head">
+        <strong>목차</strong>
+        <button type="button" class="icon-btn js-sheet-close" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <nav class="toc" aria-label="이 글의 목차"></nav>
+      <a class="toc-sheet__top" href="#main">맨 위로</a>
+    </div>
+  </div>
+
   <!-- ===== Footer: sidebar modules (editable in admin) ===== -->
   <footer class="site-footer">
     <div class="wrap wrap--wide">

@@ -54,7 +54,8 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
   Posts: `article ≤ 760px | contents rail 232px`, centered as one unit (gap 88px); the rail is sticky, starts at
   the body's top, and ends with "맨 위로".
 - **< 1080px:** one column. Category tabs (edge fade, current tab centered) replace the aside tree; the aside
-  modules stack below the list; posts get a collapsible inline TOC.
+  modules stack below the list; posts get a collapsible inline TOC, and while reading, a bottom-right
+  current-section button (44px) that opens the contents as a bottom sheet with "맨 위로".
 - Home: wide hero sentence (option `heroText`, `*word*` → accent, up to 40px), then covers with real section
   heads (25px/800 over a rule): `index` (default), `featured`, `gallery`.
 - Lists: list head + year-grouped index; option `listStyle = summary` adds summaries and thumbnails.

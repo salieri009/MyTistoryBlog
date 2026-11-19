@@ -145,7 +145,7 @@
       if (m[1] !== lastYear) {
         var y = doc.createElement('li');
         y.className = 'idx__year';
-        y.setAttribute('aria-hidden', 'true');
+        y.setAttribute('role', 'presentation');
         y.textContent = m[1];
         list.insertBefore(y, row);
         lastYear = m[1];
@@ -250,16 +250,50 @@
       };
       place(); window.addEventListener('resize', place); window.addEventListener('load', place);
     }
+    var sheet = initSheet(list);
     var links = $$('.toc a'), last, ticking = false;
     function mark() {
-      var active = null;
-      for (var i = 0; i < heads.length; i++) { if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) active = heads[i].id; else break; }
-      if (active !== last) { last = active; links.forEach(function (l) { l.classList.toggle('is-active', l.getAttribute('data-target') === active); }); }
+      var active = null, activeText = '';
+      for (var i = 0; i < heads.length; i++) {
+        if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) { active = heads[i].id; activeText = heads[i].textContent.trim(); } else break;
+      }
+      if (active !== last) {
+        last = active;
+        links.forEach(function (l) { l.classList.toggle('is-active', l.getAttribute('data-target') === active); });
+        if (sheet) sheet.label(activeText || '목차');
+      }
+      if (sheet) {
+        var r = content.getBoundingClientRect();
+        sheet.show(r.top < 0 && r.bottom > innerHeight * 0.5);
+      }
       ticking = false;
     }
     addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(mark); } }, { passive: true });
     mark();
   }
+  /* Phones/tablets: floating "current section" button that opens the contents as a bottom sheet. */
+  function initSheet(list) {
+    var fab = $('.toc-fab'), sheet = $('#toc-sheet');
+    if (!fab || !sheet) return null;
+    var btn = $('.js-sheet-open', fab), label = $('.toc-fab__label', fab), lastFocus = null;
+    $('.toc', sheet).appendChild(list.cloneNode(true));
+    function setOpen(open) {
+      sheet.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      doc.body.classList.toggle('sheet-open', open);
+      if (open) { lastFocus = doc.activeElement; var a = $('.toc a.is-active', sheet) || $('.toc a', sheet); if (a) a.focus(); }
+      else if (lastFocus) lastFocus.focus();
+    }
+    btn.addEventListener('click', function () { setOpen(true); });
+    $$('.js-sheet-close', sheet).forEach(function (el) { el.addEventListener('click', function () { setOpen(false); }); });
+    $$('a', sheet).forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
+    sheet.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    return {
+      label: function (t) { label.textContent = t; $$('.toc a', sheet).forEach(function (l) { l.classList.toggle('is-active', l.textContent.trim() === t); }); },
+      show: function (on) { if (fab.hidden === on) fab.hidden = !on; }
+    };
+  }
+
   function initProgress(content) {
     var bar = $('.progress__bar');
     if (!bar) return;
