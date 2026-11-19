@@ -15,3 +15,4 @@ node_modules/
 !.impeccable/live/
 .impeccable/live/*
 !.impeccable/live/config.json
+dev/proposals/*.html

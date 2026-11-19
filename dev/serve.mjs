@@ -28,8 +28,11 @@ createServer(async (req, res) => {
     res.write('\n'); clients.add(res); req.on('close', () => clients.delete(res));
     return;
   }
-  let file = normalize(join(OUT, url === '/' ? 'index.html' : url));
-  if (!file.startsWith(OUT)) { res.writeHead(403).end(); return; }
+  const PROPOSALS = join(ROOT, 'dev', 'proposals');
+  const base = url.startsWith('/proposals') ? PROPOSALS : OUT;
+  const rel = url.startsWith('/proposals') ? url.slice('/proposals'.length) || '/' : url;
+  let file = normalize(join(base, rel === '/' ? 'index.html' : rel));
+  if (!file.startsWith(base)) { res.writeHead(403).end(); return; }
   try {
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
     let body = await readFile(file);
@@ -41,7 +44,7 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   build();
-  console.log(`\n  이정표 skin preview → http://localhost:${PORT}/\n  pages: home, post, post-dark, post-blue, category, search, protected, tags, guestbook\n`);
+  console.log(`\n  Salieri Index preview → http://localhost:${PORT}/\n  pages: home, home-dark, home-nocover, post, post-dark, category, category-summary, search, protected, tags, guestbook · proposals: /proposals/\n`);
 });
 
 let timer;

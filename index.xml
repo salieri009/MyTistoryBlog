@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <skin>
   <information>
-    <name>이정표 (Signpost)</name>
-    <version>2.0.0</version>
+    <name>Salieri Index</name>
+    <version>3.0.0</version>
     <description>
-      <![CDATA[ 도로 안내 표지판에서 가져온 읽기 중심 스킨입니다. 초록 안내판 헤더와 카테고리, 글 번호 방패, 차선 구분선, 목차, 코드 복사, 다크 모드를 지원합니다. ]]>
+      <![CDATA[ 글자가 먼저인 담백한 스킨입니다. 연도별 글 목록, 시리즈 제목 분리([과정] N일차 :: 주제), 목차, 읽는 시간, 코드 복사, 다크 모드를 지원합니다. 색은 Salieri 다이어그램 팔레트를 따릅니다. ]]>
     </description>
     <license>
       <![CDATA[ MIT License ]]>
@@ -16,8 +16,8 @@
     <email></email>
   </author>
   <default>
-    <entriesOnPage>10</entriesOnPage>
-    <entriesOnList>10</entriesOnList>
+    <entriesOnPage>20</entriesOnPage>
+    <entriesOnList>20</entriesOnList>
     <recentEntries>5</recentEntries>
     <recentComments>5</recentComments>
     <recentTrackbacks>5</recentTrackbacks>
@@ -53,47 +53,62 @@
     <cover>
       <![CDATA[
       [
-        {"name":"signboard","title":"최근 글","dataType":"RECENT","data":{"category":"ALL","size":5}},
-        {"name":"rows","title":"새로 올라온 글","dataType":"RECENT","data":{"category":"ALL","size":10}}
+        {"name":"index","title":"최근 글","dataType":"RECENT","data":{"category":"ALL","size":20}}
       ]
       ]]>
     </cover>
   </default>
   <cover>
     <item>
-      <name>signboard</name>
-      <label><![CDATA[ 이정표 (대형 안내판) ]]></label>
-      <description><![CDATA[ 블로그 제목과 설명, 그리고 고른 글들을 안내판의 행선지처럼 보여줍니다. 4~6개를 권장합니다. ]]></description>
+      <name>index</name>
+      <label><![CDATA[ 인덱스 (날짜 · 제목) ]]></label>
+      <description><![CDATA[ 연도별로 묶인 날짜 · 제목 · 카테고리 목록입니다. 홈의 기본 형태로 권장합니다. ]]></description>
     </item>
     <item>
-      <name>rows</name>
-      <label><![CDATA[ 목록 ]]></label>
-      <description><![CDATA[ 제목, 요약, 카테고리, 날짜, 섬네일을 한 줄씩 보여줍니다. ]]></description>
+      <name>featured</name>
+      <label><![CDATA[ 추천 글 (요약 · 섬네일) ]]></label>
+      <description><![CDATA[ 제목, 요약, 섬네일을 함께 보여줍니다. 3~5개를 권장합니다. ]]></description>
     </item>
     <item>
       <name>gallery</name>
       <label><![CDATA[ 갤러리 ]]></label>
-      <description><![CDATA[ 섬네일 중심의 격자입니다. 사진이 많은 카테고리에 어울립니다. 3의 배수를 권장합니다. ]]></description>
+      <description><![CDATA[ 섬네일 격자입니다. 사진이 많은 카테고리에 어울립니다. 3의 배수를 권장합니다. ]]></description>
     </item>
   </cover>
   <variables>
-    <variablegroup name="디자인">
+    <variablegroup name="홈 소개">
       <variable>
-        <name>signColor</name>
-        <label><![CDATA[ 안내판 색 ]]></label>
-        <description><![CDATA[ 헤더, 카테고리, 홈 안내판의 색입니다. ]]></description>
-        <type>SELECT</type>
-        <option>
-          <![CDATA[
-          [
-            {"name":"green", "label":"고속도로 초록", "value":"green"},
-            {"name":"blue", "label":"일반도로 파랑", "value":"blue"},
-            {"name":"brown", "label":"관광지 갈색", "value":"brown"}
-          ]
-          ]]>
-        </option>
-        <default>green</default>
+        <name>heroText</name>
+        <label><![CDATA[ 소개 문장 ]]></label>
+        <description><![CDATA[ 홈 맨 위에 크게 보이는 문장입니다. *단어*처럼 별표로 감싸면 파란색으로 강조됩니다. 비우면 블로그 설명을 씁니다. ]]></description>
+        <type>STRING</type>
+        <option />
+        <default>제가 걸어온 길이 당신에게 도움이 되는 *이정표*였으면 좋겠습니다.</default>
       </variable>
+      <variable>
+        <name>githubUrl</name>
+        <label><![CDATA[ GitHub 주소 ]]></label>
+        <type>STRING</type>
+        <option />
+        <default>https://github.com/salieri009</default>
+      </variable>
+      <variable>
+        <name>twitterUrl</name>
+        <label><![CDATA[ X (Twitter) 주소 ]]></label>
+        <type>STRING</type>
+        <option />
+        <default>https://twitter.com/Salieri1845799</default>
+      </variable>
+      <variable>
+        <name>email</name>
+        <label><![CDATA[ 이메일 ]]></label>
+        <description><![CDATA[ 비우면 아이콘을 숨깁니다. ]]></description>
+        <type>STRING</type>
+        <option />
+        <default></default>
+      </variable>
+    </variablegroup>
+    <variablegroup name="화면">
       <variable>
         <name>colorScheme</name>
         <label><![CDATA[ 화면 모드 ]]></label>
@@ -109,6 +124,21 @@
           ]]>
         </option>
         <default>auto</default>
+      </variable>
+      <variable>
+        <name>listStyle</name>
+        <label><![CDATA[ 글 목록 형태 ]]></label>
+        <description><![CDATA[ 카테고리 · 검색 · 태그 목록의 형태입니다. ]]></description>
+        <type>SELECT</type>
+        <option>
+          <![CDATA[
+          [
+            {"name":"index", "label":"인덱스 (날짜 · 제목)", "value":"index"},
+            {"name":"summary", "label":"요약 (요약 · 섬네일 포함)", "value":"summary"}
+          ]
+          ]]>
+        </option>
+        <default>index</default>
       </variable>
       <variable>
         <name>tocMode</name>
@@ -127,60 +157,16 @@
       </variable>
       <variable>
         <name>logoImage</name>
-        <label><![CDATA[ 로고 이미지 (높이 40px) ]]></label>
-        <description><![CDATA[ 비워두면 블로그 제목을 글자로 표시합니다. ]]></description>
+        <label><![CDATA[ 로고 이미지 (높이 32px) ]]></label>
+        <description><![CDATA[ 비우면 블로그 제목을 글자로 표시합니다. ]]></description>
         <type>IMAGE</type>
         <option />
         <default></default>
       </variable>
-    </variablegroup>
-    <variablegroup name="하단">
       <variable>
         <name>footerCopyright</name>
         <label><![CDATA[ 저작권 문구 ]]></label>
-        <description><![CDATA[ 비워두면 "© 필명"을 표시합니다. ]]></description>
-        <type>STRING</type>
-        <option />
-        <default></default>
-      </variable>
-      <variable>
-        <name>footerLink1Name</name>
-        <label><![CDATA[ 링크 1 이름 ]]></label>
-        <type>STRING</type>
-        <option />
-        <default>GitHub</default>
-      </variable>
-      <variable>
-        <name>footerLink1Url</name>
-        <label><![CDATA[ 링크 1 주소 ]]></label>
-        <type>STRING</type>
-        <option />
-        <default>https://github.com/salieri009</default>
-      </variable>
-      <variable>
-        <name>footerLink2Name</name>
-        <label><![CDATA[ 링크 2 이름 ]]></label>
-        <type>STRING</type>
-        <option />
-        <default></default>
-      </variable>
-      <variable>
-        <name>footerLink2Url</name>
-        <label><![CDATA[ 링크 2 주소 ]]></label>
-        <type>STRING</type>
-        <option />
-        <default></default>
-      </variable>
-      <variable>
-        <name>footerLink3Name</name>
-        <label><![CDATA[ 링크 3 이름 ]]></label>
-        <type>STRING</type>
-        <option />
-        <default></default>
-      </variable>
-      <variable>
-        <name>footerLink3Url</name>
-        <label><![CDATA[ 링크 3 주소 ]]></label>
+        <description><![CDATA[ 비우면 "© 필명"을 표시합니다. ]]></description>
         <type>STRING</type>
         <option />
         <default></default>

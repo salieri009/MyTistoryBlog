@@ -1,4 +1,4 @@
-// `npm run package`: zip only what Tistory's "스킨 등록" accepts → dist/ijeongpyo-skin.zip
+// `npm run package`: zip only what Tistory's "스킨 등록" accepts → dist/salieri-index-skin.zip
 // Minimal ZIP writer (deflate) on node:zlib, no dependencies.
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { deflateRawSync, crc32 } from 'node:zlib';
@@ -35,6 +35,6 @@ end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeU
 end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
 
 mkdirSync(join(ROOT, 'dist'), { recursive: true });
-const out = join(ROOT, 'dist', 'ijeongpyo-skin.zip');
+const out = join(ROOT, 'dist', 'salieri-index-skin.zip');
 writeFileSync(out, Buffer.concat([...locals, cd, end]));
-console.log(`packaged ${files.length} files → dist/ijeongpyo-skin.zip\n  ${files.join('\n  ')}`);
+console.log(`packaged ${files.length} files → dist/salieri-index-skin.zip\n  ${files.join('\n  ')}`);

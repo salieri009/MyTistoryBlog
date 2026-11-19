@@ -1,79 +1,61 @@
-# DESIGN — "이정표 (Signpost)" Tistory skin
+# DESIGN — Salieri Index
 
 Visual system for the skin in this repo. Product truth lives in PRODUCT.md.
-Direction chosen from three frontend-slides previews (`.frontend-slides/slide-previews/style-a|b|c.html`):
-**C — 이정표**. It comes from the blog's own line: "제가 걸어온 길이 … 이정표였으면 좋겠네요."
+
+## History
+
+1. **이정표 (Signpost)**, tag `signpost-v1`: road guide-sign world. The owner rejected it as tacky ("밤티"):
+   the literal green sign panels read as a highway sign, not a blog.
+2. Three page-level proposals (`dev/proposals/`, run `node dev/proposals/build.mjs`):
+   A 담백한 인덱스 · B 포토 저널 · C 다크 데스크. **A was chosen.**
+3. **Salieri Index** (this document) = A, rebuilt on Tistory template tags and fitted to the owner's persona.
 
 The skin is **data-agnostic**: every title, category, count, date and image comes from Tistory template tags.
-Nothing about a specific blog is hard-coded.
+Persona-specific values (hero sentence, GitHub/X links) are **skin option defaults** in index.xml, editable in admin.
 
-## World
+## Persona → design
 
-Road guide signage. Reflective green guide panels with a white inset border, route shields, distance numerals,
-lane dashes and the amber edge line. The world owns the **frame**: the masthead, the category tree, the route
-shield on posts, section openers, code and table setting, and the footer. The **reading column** stays calm.
+| Persona trait (from the owner's writing skills) | Design response |
+|---|---|
+| Voice: short declarative sentences, honest, no emoji, no flourish, no long dash | Text-first index, no decoration, no cards as structure, no emoji icons |
+| Diagram skill fixes a "Salieri palette" (blue flow, slate text, navy Evidence boxes) | The skin uses the same palette, so diagrams and skin match |
+| Daily TIL titles `[과정] N일차 :: 주제` | `::` splits a title into a muted series label + the main title, in lists and on the post |
+| Root category "나의 성장기", life log over years | Posts grouped by year in every index (growth log) |
+| Posts have 트러블슈팅 and 회고 sections | Quote style2 = trouble (red tint), style3 = resolved/retro (green tint), style1 = key line |
+| Long code-heavy posts | TOC (right rail ≥ 1240px, collapsible below), reading time, code copy, Evidence-style code panel |
+| Developer, reads at night | Dark mode follows the OS, with a visitor toggle |
 
-Physical scene: people read on a laptop in daylight or on a phone at night. The skin follows the OS setting by default
-(daylight = concrete ground, night = asphalt ground), and the owner can pin light or dark in the skin options.
+## Color (Salieri palette)
 
-## Color — strategy: Committed frame, Restrained column
-
-| Token | Light (daylight) | Dark (night) | Role |
+| Token | Light | Dark | Role |
 |---|---|---|---|
-| `--ground` | `#ECEEEA` concrete | `#1C2024` asphalt | page ground |
-| `--surface` | `#FFFFFF` | `#242A2F` | reading column, panels |
-| `--ink` | `#15191C` | `#E8ECE7` | body text |
-| `--ink-2` | `#4B535A` | `#A7AFB5` | secondary text |
-| `--line` | `#D3D8D2` | `#363D44` | hairlines |
-| `--sign` | `#0B6B45` | `#0D7A4F` | guide-sign field (option: blue `#1F4F9E`, brown `#6B4426`) |
-| `--sign-ink` | `#F7F7F2` | `#F7F7F2` | text and border on the sign |
-| `--amber` | `#F2B705` | `#F2B705` | edge line, highlight, progress, focus |
-| `--code-bg` | `#1F2428` | `#15191C` | code blocks are always asphalt |
+| `--ink` | `#1E293B` | `#E2E8F0` | text |
+| `--ink-2` / `--ink-3` | `#475569` / `#64748B` | `#B4C0D0` / `#8C9AB0` | secondary / tertiary |
+| `--line` | `#E2E8F0` | `#1E293B` | dividers |
+| `--accent` | `#2563EB` | `#60A5FA` | links, category, active TOC, hero emphasis |
+| `--risk*` | `#DC2626` on `#FEF2F2` | tinted | quote style2 (트러블슈팅) |
+| `--ok*` | `#16A34A` on `#F0FDF4` | tinted | quote style3 (해결 · 회고) |
+| `--mark` | `#FDE68A` | 30% | `<mark>`, text selection |
+| `--code-bg` | `#1E293B` | `#0B1222` | code = Evidence panel, text `#E2E8F0` |
 
-The sign color is a skin option: 고속도로 green (default), 일반도로 blue, 관광지 brown.
-Text on the sign field is always `--sign-ink` (≥ 4.5:1 on all three).
+Strategy: restrained. One accent; the semantic colors appear only inside posts, where they mean something.
 
 ## Type
 
-- **Body / Hangul:** Pretendard Variable (workhorse Korean UI face, right for a Read surface). 17px, line-height 1.8,
-  `word-break: keep-all`, measure ≤ 70ch inside a 720px column (matches `contentWidth`).
-- **Signage numerals and Latin labels:** Overpass (Highway Gothic lineage) for shields, counts, dates, paging.
-  Never uppercase-transform Hangul.
-- **Code:** JetBrains Mono, with D2Coding as the Hangul fallback for comments in code.
-- Scale: 14 / 15 / 17 / 20 / 24 / 30 / 38 / 48 (display max 3rem on articles, 4.5rem on the home sign).
-
-## Signature moves (one system, used where it earns its place)
-
-1. **Guide-sign panel**: `--sign` field, 14px radius, a 3px `--sign-ink` inset border drawn with box-shadow.
-   Used for the masthead, the category tree ("destinations" with counts set as distances), and the home signboard
-   cover. Never around body text.
-2. **Route shield**: a white shield badge holding the post's number (`[##_article_rep_id_##]`) on the article header.
-3. **Lane dashes**: a dashed rule (`repeating-linear-gradient`) for `<hr>`, section separators and the footer.
-   The amber edge line runs under the footer and across the top of the page as the reading-progress bar.
-4. **Exit list TOC**: h2/h3 contents shown as "출구" rows with arrow glyphs (authored SVG). Sticky rail at ≥ 1200px,
-   collapsible at smaller sizes.
+- Pretendard Variable for everything. 17px body, line-height 1.85, column 720px (= `contentWidth`).
+- Mono (Cascadia Code → JetBrains Mono) only for code and index dates.
+- Scale: 12 / 13 / 14 / 15 / 17 / 18 / 20 / 24 / 30 / 38. Headings 650–800, tracking −0.02 to −0.03em.
 
 ## Layout
 
-- ≥ 1200px: `rail 280px | column ≤ 720px | toc 220px` on articles; `rail | column` on lists.
-- < 1200px: the rail becomes a drawer opened from the masthead menu button (focus-trapped, Esc to close).
-- Lists are rows, not cards: title, summary, meta, optional 4:3 thumbnail on the right.
-- Home: covers defined in index.xml — `signboard` (big guide sign, items as destinations), `rows`, `gallery`.
-
-## Components set in the world
-
-- Code: asphalt panel, a language label from the `pre` class, a copy button, horizontal scroll, and token colors
-  that override the highlight.js theme Tistory injects.
-- Tables: wrapped for horizontal scroll, the header row tinted with `--sign` at 10%, Overpass numerals.
-- Quotes: style1 = sign-tint panel with a full border, style2 = amber caution panel, style3 = plain boxed.
-- Focus ring: 3px `--amber` with a 2px offset. Text selection uses `--amber` at 45%.
+- One centered column. Header: title left; blog menu, 카테고리 (panel with the full tree), search, theme right.
+- Home: hero sentence (option `heroText`, `*word*` → accent), profile row with social icons, top-level category
+  tabs, then covers: `index` (default), `featured`, `gallery`.
+- Lists: same tabs + list head + year-grouped index; option `listStyle = summary` adds summaries and thumbnails.
+- Post: category, series label, title, meta (author · date · comments · reading time), body, tags,
+  prev/next, related (text list), comments.
+- Footer: every sidebar module (editable in admin) in a 3-column grid, then a bottom line.
 
 ## Motion
 
-One authored moment: the masthead sign settles in (opacity and 8px rise, 500ms ease-out-expo) on first paint.
-Everything else is state feedback only. `prefers-reduced-motion` disables it.
-
-## Refused on purpose
-
-No eyebrow kickers, no gradient text, no glass, no side-bar callouts, no hard offset shadows, no emoji icons,
-and no monospace outside code and numerals.
+None beyond hover color and a 2px reading-progress bar. `prefers-reduced-motion` respected.

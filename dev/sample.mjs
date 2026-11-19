@@ -32,28 +32,29 @@ const categoryList =
 const blogMenu = `<ul><li class="t_menu_home first"><a href="#">홈</a></li><li class="t_menu_tag"><a href="#">태그</a></li><li class="t_menu_guestbook last"><a href="#">방명록</a></li></ul>`;
 
 const titles = [
-  '샘플 글 제목: 쿠버네티스 배포 파이프라인을 처음부터 다시 짜 본 기록',
-  '두 번째 샘플 글, 제목이 조금 짧은 경우',
-  '세 번째 샘플 글 — 아주아주 긴 제목이 두 줄을 넘어갈 때 줄바꿈과 말줄임이 어떻게 보이는지 확인하기 위한 문장',
-  '네 번째 샘플 글: 여행 사진 정리',
-  '다섯 번째 샘플 글: 일본어 문법 메모',
-  '여섯 번째 샘플 글: 주말 프라모델 작업기',
+  '[샘플 과정] 최종 프로젝트 3일차 :: 아이디어를 꼬아 간 생각의 순서',
+  '[샘플 과정] 최종 프로젝트 2일차 :: 대시보드를 버리고 생각해 보면',
+  '당연함을 잃어버린다는 것',
+  '주말 프라모델 작업기, 도색까지 3일',
+  '일본어 문법 메모: 조사 は와 が의 차이',
+  '세 번째 샘플 글. 아주아주 긴 제목이 두 줄을 넘어갈 때 줄바꿈과 말줄임이 어떻게 보이는지 확인하기 위한 문장',
 ];
 const summary = '샘플 요약 문장입니다. 실제 블로그에서는 글 본문의 앞부분이 이 자리에 들어갑니다. 두 줄을 넘어가면 말줄임으로 잘립니다. 길이를 확인하기 위해 문장을 조금 더 이어서 씁니다.';
+const DATES = ['2026.11.18', '2026.11.17', '2026.11.15', '2025.12.30', '2025.12.21', '2025.11.02'];
 const date = (d) => `2026.11.${String(d).padStart(2, '0')}`;
 
 const listRep = titles.map((t, i) => ({
   list_rep_link: '#', list_rep_title: t, list_rep_title_text: t, list_rep_summary: summary,
-  list_rep_regdate: date(18 - i), list_rep_category: ['개발', '일상', '개발', '일상', '어학', '취미'][i],
+  list_rep_regdate: DATES[i], list_rep_category: ['개발', '개발', '일상', '취미', '어학', '개발'][i],
   list_rep_category_link: '#', list_rep_rp_cnt: [3, 0, 12, 1, 0, 5][i], list_rep_author: '샘플 필명',
   list_rep_thumbnail: i % 3 === 1 ? '' : img(400, 300, 140 + i * 30), list_rep_thumbnail_url: img(400, 300, 140 + i * 30),
 }));
 
-const coverItems = titles.slice(0, 5).map((t, i) => ({
+const coverItems = titles.map((t, i) => ({
   cover_item_url: '#', cover_item_title: t, cover_item_summary: summary,
   cover_item_thumbnail: i === 2 ? '' : img(480, 360, 120 + i * 35), cover_item_article_info: true,
-  cover_item_category: ['개발', '일상', '개발', '취미', '어학'][i], cover_item_category_url: '#',
-  cover_item_date: `${date(18 - i)} 19:30`, cover_item_simple_date: date(18 - i), cover_item_comment_count: i * 2,
+  cover_item_category: ['개발', '개발', '일상', '취미', '어학', '개발'][i], cover_item_category_url: '#',
+  cover_item_date: `${DATES[i]} 19:30`, cover_item_simple_date: DATES[i], cover_item_comment_count: i * 2,
 }));
 
 const articleBody = `<div class="tt_article_useless_p_margin contents_style">
@@ -121,12 +122,12 @@ const paging = {
 
 export const site = {
   title: '샘플 블로그 이름', page_title: '샘플 블로그 이름', blog_link: '#', rss_url: '#', taglog_link: '#', guestbook_link: '#',
-  desc: '블로그 설명이 들어가는 자리입니다.\n여러 줄로 써도 안내판 안에서 네 줄까지만 보입니다.', blogger: '샘플 필명',
+  desc: '블로그 설명이 들어가는 자리입니다.\n여러 줄로 써도 됩니다.', blogger: '샘플 필명',
   image: img(120, 120, 200), blog_menu: blogMenu, category_list: categoryList,
   search_name: 'search', search_text: '', search_onclick_submit: "location.href='#'",
   revenue_list_upper: '', revenue_list_lower: '', count_total: '123,456', count_today: '321', count_yesterday: '654',
   ...sidebar,
-  vars: { signColor: 'green', colorScheme: 'auto', tocMode: 'on', logoImage: '', footerCopyright: '', footerLink1Name: 'GitHub', footerLink1Url: '#', footerLink2Name: '', footerLink2Url: '', footerLink3Name: '', footerLink3Url: '' },
+  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: '제가 걸어온 길이 당신에게 도움이 되는 *이정표*였으면 좋겠습니다.', githubUrl: '#', twitterUrl: '#', email: '' },
 };
 
 const article = (extra = {}) => ({
@@ -147,9 +148,9 @@ export const pages = {
   home: {
     body_id: 'tt-body-index',
     cover_group: { cover_rep: [
-      { __cover: 'signboard', cover_title: '최근 글', cover_url: '#', cover_item: coverItems },
-      { __cover: 'rows', cover_title: '새로 올라온 글', cover_url: '#', cover_item: coverItems.slice(0, 4) },
-      { __cover: 'gallery', cover_title: '사진이 있는 글', cover_url: '#', cover_item: coverItems.concat(coverItems[0]) },
+      { __cover: 'index', cover_title: '최근 글', cover_url: '#', cover_item: coverItems },
+      { __cover: 'featured', cover_title: '추천 글', cover_url: '', cover_item: coverItems.slice(0, 3) },
+      { __cover: 'gallery', cover_title: '사진이 있는 글', cover_url: '#', cover_item: coverItems.slice(0, 6) },
     ] },
   },
   category: {
@@ -163,11 +164,22 @@ export const pages = {
   },
   post: { body_id: 'tt-body-page', article_rep: [article()] },
   'post-dark': { body_id: 'tt-body-page', article_rep: [article()], vars: { colorScheme: 'dark' } },
-  'post-blue': { body_id: 'tt-body-page', article_rep: [article({ article_rep_id: '7' })], vars: { signColor: 'blue' } },
+  'category-summary': { body_id: 'tt-body-category', list: { list_conform: '개발', list_count: 96, list_description: '카테고리 설명이 있으면 여기에 표시됩니다.', list_style: '', list_empty: false, list_rep: listRep }, paging, vars: { listStyle: 'summary' } },
   protected: {
     body_id: 'tt-body-page',
     article_protected: { article_rep_title: '보호된 샘플 글', article_rep_category: '일상', article_rep_category_link: '#', article_rep_date: '2026.11.10 10:00', article_password: 'pw', article_dissolve: 'return false;' },
   },
   tags: { body_id: 'tt-body-tag', tag: { tag_rep: sidebar.random_tags.concat(sidebar.random_tags.map((t) => ({ ...t, tag_name: t.tag_name + '2' }))) } },
   guestbook: { body_id: 'tt-body-guestbook', guest: true, guestbook_group: '<div style="padding:28px;border:1px dashed var(--line-strong);border-radius:14px;color:var(--ink-3);text-align:center">티스토리 방명록 영역</div>' },
+};
+
+// Home in dark mode, and home without a cover (Tistory falls back to index_article_rep per post).
+pages['home-dark'] = { ...pages.home, vars: { colorScheme: 'dark' } };
+pages['home-nocover'] = {
+  body_id: 'tt-body-index', paging,
+  article_rep: titles.map((t, i) => ({
+    index_article_rep: true, permalink_article_rep: false, article_rep_link: '#', article_rep_title: t, article_rep_summary: summary,
+    article_rep_category: ['개발', '개발', '일상', '취미', '어학', '개발'][i], article_rep_simple_date: DATES[i],
+    article_rep_thumbnail: i % 2 ? '' : img(240, 180, 150 + i * 20), article_rep_thumbnail_raw_url: img(240, 180, 150 + i * 20),
+  })),
 };
