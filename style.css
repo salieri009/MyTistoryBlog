@@ -215,13 +215,14 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .idx__row > a:hover .idx__thumb { transform: scale(1.03); }
 .series { display: block; margin-bottom: 2px; font-size: 13px; font-weight: 600; color: var(--ink-3); letter-spacing: 0; }
 
-/* Summary mode (skin option "listStyle = summary") and index_article_rep */
-.list-summary .idx__sum, .idx--loose .idx__sum {
+/* Summary mode (skin option "listStyle = summary"), index_article_rep, and search results (the match needs context) */
+.list-summary .idx__sum, .idx--loose .idx__sum, #tt-body-search .idx__sum {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   margin-top: 6px; font-size: 14px; line-height: 1.65; color: var(--ink-2);
 }
 .list-summary .idx__thumb, .idx--loose .idx__thumb { width: 160px; }
 .idx__row--notice .idx__cat { color: var(--mark-ink); font-weight: 700; }
+.idx mark.hit { padding: 0 .08em; border-radius: 2px; background: var(--mark); color: inherit; }
 
 @media (max-width: 599.98px) {
   .idx__row > a { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 12px; padding: 14px 0; }
@@ -278,6 +279,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .crumbs__sep { width: 14px; height: 14px; color: var(--ink-3); stroke-width: 2; }
 .post__title { margin: 12px 0 0; font-size: 38px; font-weight: 800; line-height: 1.3; letter-spacing: -.03em; }
 .post__title .series { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.post__title .series--link { width: fit-content; }
+.post__title .series--link:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
 .post__meta { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 16px; font-size: 14px; color: var(--ink-3); }
 .post__meta > *:not([hidden]) + *:not([hidden])::before { content: "·"; margin: 0 8px; }
 .post__meta a:hover { color: var(--ink); }
@@ -355,6 +358,24 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .post-nav__date { font: 12px var(--mono); color: var(--ink-3); }
 @media (max-width: 599.98px) { .post-nav { grid-template-columns: 1fr; } .post-nav__item--next { grid-column: 1; grid-row: 1; border-left: 0; border-bottom: 1px solid var(--line); padding-left: 0; text-align: left; } }
 
+/* Series: every post sharing this title's "시리즈 N일차" label, in episode order (filled by script.js) */
+.series-nav { margin-top: 48px; }
+.series-nav[hidden] { display: none; }
+.series-nav__title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; padding: 14px 0 8px; border-top: 1px solid var(--rule); font-size: 17px; font-weight: 750; line-height: 1.5; letter-spacing: -.01em; color: var(--ink); }
+.series-nav__label { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: 0; }
+.series-nav__count { font-size: 13px; font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.series-nav__list { margin: 0; padding: 0; list-style: none; }
+.series-nav__link { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 1.55; }
+.series-nav__ep { font: 500 13px var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.series-nav__main { font-weight: 500; color: var(--ink-2); }
+a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.series-nav__item.is-current .series-nav__ep { color: var(--accent); font-weight: 700; }
+.series-nav__item.is-current .series-nav__main { color: var(--ink); font-weight: 700; }
+.series-nav:not(.is-open) .is-far { display: none; }
+.series-nav__more { min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px var(--font); cursor: pointer; }
+.series-nav__more:hover { text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 599.98px) { .series-nav__link { grid-template-columns: 54px minmax(0, 1fr); gap: 12px; } .series-nav__ep { font-size: 12px; } }
+
 /* Same-category posts: thumbnails help the image-heavy half of the blog */
 .related { margin-top: 48px; }
 .has-tistory-related .related { display: none; }
@@ -379,7 +400,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .author__links a { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
 .author__links a:hover { color: var(--accent); text-decoration-color: currentColor; }
 .author__links .author__ask { color: var(--accent); font-weight: 650; text-decoration: none; }
+.author[hidden] { display: none; }
+/* Merged with Tistory's namecard (script.js): the link row sits under the namecard text, aligned past the avatar */
+.author__links--merged { margin: 0 0 32px; padding: 0 0 20px 72px; border-bottom: 1px solid var(--line); }
 .comments { margin-top: 32px; }
+.author[hidden] + .comments { margin-top: 48px; }
 .protected { margin-top: 32px; padding: 32px; border: 1px solid var(--line); border-radius: 12px; }
 .protected p { margin: 0 0 14px; color: var(--ink-2); }
 .protected__row { display: flex; gap: 8px; max-width: 360px; }
@@ -397,6 +422,12 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .post #article-view h4 { margin: 1.6em 0 .5em; font-size: 17px; font-weight: 700; }
 .post #article-view a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .post #article-view a:hover { text-decoration-thickness: 2px; }
+/* Section links (script.js initHeadingLinks): quiet "#" after each outline heading, shown on hover or focus */
+.post #article-view .heading-link { margin-left: .3em; padding: 0 .15em; font-size: .78em; font-weight: 500; color: var(--ink-3); text-decoration: none; opacity: 0; transition: opacity .15s var(--ease); }
+.post #article-view h2:hover .heading-link, .post #article-view h3:hover .heading-link, .post #article-view .heading-link:focus-visible, .post #article-view .heading-link.is-done { opacity: 1; }
+.post #article-view .heading-link:hover { color: var(--accent); }
+.post #article-view .heading-link.is-done { font-size: 13px; font-weight: 600; color: var(--ok-ink); }
+@media (hover: none) { .post #article-view .heading-link { opacity: .7; } }
 .post #article-view strong, .post #article-view b { font-weight: 700; }
 .post #article-view mark { background: var(--mark); color: inherit; padding: 0 .15em; border-radius: 2px; }
 .post #article-view ul, .post #article-view ol { margin: 0 0 1.2em; padding-left: 1.3em; }
@@ -440,6 +471,11 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .code-copy { height: 26px; padding: 0 10px; border: 1px solid #334155; border-radius: 6px; background: none; color: #CBD5E1; font: 600 12px var(--font); cursor: pointer; }
 .code-copy:hover { background: #334155; color: #fff; }
 .code-copy.is-done { color: #86EFAC; border-color: #166534; }
+/* Long code (script.js collapseLong, > 40 lines) starts folded to its first 16 lines; the bar at the bottom unfolds it */
+.post #article-view pre.is-collapsed code { max-height: calc(14px * 1.75 * 16 + 16px); overflow-y: hidden; -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); }
+.code-more { display: block; width: 100%; height: 40px; border: 0; border-top: 1px solid var(--code-line); background: none; color: #CBD5E1; font: 600 13px var(--font); cursor: pointer; }
+.code-more:hover { background: #334155; color: #fff; }
+.code-more:focus-visible { outline-offset: -3px; }
 .post #article-view pre code, .post #article-view pre code.hljs {
   display: block; margin: 0; padding: 16px 18px 18px !important; overflow-x: auto;
   background: transparent !important; color: var(--code-ink) !important;

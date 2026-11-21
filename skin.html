@@ -235,6 +235,12 @@
               <div class="post__tags"><h2 class="sr-only">태그</h2><div class="tags">[##_tag_label_rep_##]</div></div>
             </s_tag_label>
 
+            <!-- Series: other posts whose title shares the "시리즈 N일차 ::" label (filled by script.js from the blog's own search page) -->
+            <section class="series-nav" id="series" aria-labelledby="series-title" hidden>
+              <h2 class="series-nav__title" id="series-title"></h2>
+              <ol class="series-nav__list"></ol>
+            </section>
+
             <nav class="post-nav" aria-label="이어서 읽기">
               <s_article_prev>
                 <a class="post-nav__item" href="[##_article_prev_link_##]">

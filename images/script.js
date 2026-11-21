@@ -9,6 +9,15 @@
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   };
+  var session = {
+    get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+  };
+  // "2026.11.08", "2026. 11. 8." -> ['2026', '11', '08']
+  function ymd(s) {
+    var m = (s || '').match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})/);
+    return m ? [m[1], ('0' + m[2]).slice(-2), ('0' + m[3]).slice(-2)] : null;
+  }
 
   /* ---------- Theme ---------- */
   function initTheme() {
@@ -225,20 +234,20 @@
     var rows = $$('.idx__row[data-date]');
     var lastYear = null, lastList = null;
     rows.forEach(function (row) {
-      var m = (row.getAttribute('data-date') || '').match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-      if (!m) return;
+      var d = ymd(row.getAttribute('data-date'));
+      if (!d) return;
       var list = row.parentNode;
       var t = $('.idx__date', row);
-      if (t) { t.textContent = m[2] + '.' + m[3]; t.setAttribute('datetime', m[1] + '-' + m[2] + '-' + m[3]); }
+      if (t) { t.textContent = d[1] + '.' + d[2]; t.setAttribute('datetime', d.join('-')); }
       // Each cover/list starts its own year run; index_article_rep renders one <ul> per post, so those share one run.
       if (list !== lastList && !list.classList.contains('idx--loose')) lastYear = null;
-      if (m[1] !== lastYear) {
+      if (d[0] !== lastYear) {
         var y = doc.createElement('li');
         y.className = 'idx__year';
         y.setAttribute('role', 'presentation');
-        y.textContent = m[1];
+        y.textContent = d[0];
         list.insertBefore(y, row);
-        lastYear = m[1];
+        lastYear = d[0];
       }
       lastList = list;
     });
@@ -440,7 +449,30 @@
       bar.appendChild(label); bar.appendChild(btn);
       pre.insertBefore(bar, pre.firstChild);
       code.setAttribute('tabindex', '0');
+      collapseLong(pre, code);
     });
+  }
+  /* Code longer than CODE_MAX lines starts folded to its first lines; copy still takes the whole block. */
+  var CODE_MAX = 40;
+  function collapseLong(pre, code) {
+    var lines = code.textContent.replace(/\n+$/, '').split('\n').length;
+    if (lines <= CODE_MAX || $('.code-more', pre)) return;
+    var more = doc.createElement('button');
+    more.type = 'button'; more.className = 'code-more';
+    function sync() {
+      var folded = pre.classList.contains('is-collapsed');
+      more.textContent = folded ? '전체 보기 (' + lines + '줄)' : '접기';
+      more.setAttribute('aria-expanded', folded ? 'false' : 'true');
+    }
+    more.addEventListener('click', function () {
+      var folding = !pre.classList.contains('is-collapsed');
+      pre.classList.toggle('is-collapsed');
+      sync();
+      if (folding && pre.getBoundingClientRect().top < 0) pre.scrollIntoView({ block: 'start' });
+    });
+    pre.classList.add('is-collapsed');
+    sync();
+    pre.appendChild(more);
   }
   function initTables(content) {
     $$('table', content).forEach(function (t) {
@@ -463,17 +495,21 @@
     while (used[id] || doc.getElementById(id)) id = base + '-' + n++;
     used[id] = true; return id;
   }
-  function initToc(content) {
-    if (doc.body.classList.contains('toc-off')) return;
-    var heads = $$('h2, h3', content).filter(function (h) {
+  /* Headings that make up the outline (contents, section links), each with a stable id. */
+  function tocHeads(content) {
+    var used = {};
+    return $$('h2, h3', content).filter(function (h) {
       return h.textContent.replace(/\s| /g, '').length && !h.closest('.another_category, figure, blockquote');
-    });
-    if (heads.length < 2) return;
-    var used = {}, list = doc.createElement('ol'), current = null;
-    heads.forEach(function (h) {
-      if (!h.id) h.id = slug(h.textContent, used);
+    }).map(function (h) { if (!h.id) h.id = slug(h.textContent, used); return h; });
+  }
+  function initToc(content, heads) {
+    if (doc.body.classList.contains('toc-off') || heads.length < 2) return;
+    // Labels are read once: section links get appended to the headings afterwards.
+    var labels = heads.map(function (h) { return h.textContent.trim(); });
+    var list = doc.createElement('ol'), current = null;
+    heads.forEach(function (h, i) {
       var li = doc.createElement('li'), a = doc.createElement('a');
-      a.href = '#' + h.id; a.setAttribute('data-target', h.id); a.textContent = h.textContent.trim();
+      a.href = '#' + h.id; a.setAttribute('data-target', h.id); a.textContent = labels[i];
       li.appendChild(a);
       if (h.tagName === 'H3' && current) {
         var sub = $('ol', current);
@@ -496,7 +532,7 @@
     function mark() {
       var active = null, activeText = '';
       for (var i = 0; i < heads.length; i++) {
-        if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) { active = heads[i].id; activeText = heads[i].textContent.trim(); } else break;
+        if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) { active = heads[i].id; activeText = labels[i]; } else break;
       }
       if (active !== last) {
         last = active;
@@ -548,6 +584,163 @@
     addEventListener('resize', update); update();
   }
 
+  /* Section links: "#" after each outline heading copies the address of that section. */
+  function initHeadingLinks(heads) {
+    heads.forEach(function (h) {
+      if ($('.heading-link', h)) return;
+      var a = doc.createElement('a');
+      a.className = 'heading-link';
+      a.href = '#' + h.id;
+      a.setAttribute('aria-label', '이 소제목 주소 복사');
+      a.textContent = '#';
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        try { history.replaceState(null, '', '#' + h.id); } catch (err) {}
+        copyText(location.href.split('#')[0] + '#' + h.id).then(function () {
+          a.textContent = '복사됨'; a.classList.add('is-done');
+          setTimeout(function () { a.textContent = '#'; a.classList.remove('is-done'); }, 1500);
+        }, function () {});
+      });
+      h.appendChild(a);
+    });
+  }
+
+  /* ---------- Series: posts titled "[과정] 최종 프로젝트 3일차 :: 주제" listed together at the end of the post ----------
+     Tistory has no series feature: the series is the title label before "::". The list comes from the blog's own
+     search page (same origin, rendered by this skin), keeping only titles whose label names the same series. */
+  var SERIES_EP = /^(.+?)\s*(\d+)\s*(일\s*차|회차|회|편|화|부|주차|강|장)$/;
+  function seriesOf(label) {
+    var t = label.replace(/\s+/g, ' ').trim(), m = t.match(SERIES_EP);
+    return m ? { key: m[1].trim(), n: +m[2], ep: m[2] + m[3].replace(/\s+/g, '') } : { key: t, n: null, ep: '' };
+  }
+  function splitTitle(text) {
+    var i = text.indexOf('::');
+    if (i < 1) return null;
+    var label = text.slice(0, i).trim(), main = text.slice(i + 2).trim();
+    return label && main ? { label: label, main: main } : null;
+  }
+  function initSeriesNav() {
+    var box = $('.post .series-nav'), title = $('.post .post__title');
+    var sEl = title && $('.series', title), mEl = title && $('.series-main', title);
+    if (!box || !sEl || !mEl || !window.fetch || !window.DOMParser) return;
+    var me = seriesOf(sEl.textContent);
+    // Search words: the series name without its "[과정]" tag ("[LG CNS] 최종 프로젝트" -> "최종 프로젝트").
+    var words = me.key.replace(/^\[[^\]]*\]\s*/, '').trim() || me.key.replace(/[[\]]/g, ' ').trim();
+    if (words.length < 2) return;
+    var cacheKey = 'salieri-series:' + me.key.toLowerCase(), cached = null;
+    try { cached = JSON.parse(session.get(cacheKey) || 'null'); } catch (e) {}
+    if (cached && Date.now() - cached.t < 10 * 60 * 1000) { renderSeries(box, me, cached.items, sEl, mEl); return; }
+    // __SKIN_SEARCH__: set only by the local preview harness
+    fetch((window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words), { credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function (html) {
+        var page = new DOMParser().parseFromString(html, 'text/html'), items = [];
+        $$('.list .idx__row', page).forEach(function (row) {
+          var a = $('a[href]', row), t = $('.idx__title', row);
+          var parts = t && splitTitle(t.textContent.replace(/\s+/g, ' '));
+          if (!a || !parts) return;
+          var s = seriesOf(parts.label);
+          if (s.key.toLowerCase() !== me.key.toLowerCase()) return; // the words only appear in the body
+          items.push({ href: a.getAttribute('href'), main: parts.main, n: s.n, ep: s.ep, date: row.getAttribute('data-date') || '' });
+        });
+        session.set(cacheKey, JSON.stringify({ t: Date.now(), items: items }));
+        renderSeries(box, me, items, sEl, mEl);
+      })
+      .catch(function () {}); // no list: the post still has prev/next
+  }
+  function renderSeries(box, me, items, sEl, mEl) {
+    var pathOf = function (h) { try { return new URL(h, location.href).pathname.replace(/\/+$/, ''); } catch (e) { return h; } };
+    var here = pathOf(location.href), main = mEl.textContent.trim(), list = items.slice(), cur = null;
+    list.forEach(function (it) { if (!cur && it.href && pathOf(it.href) === here) cur = it; });
+    list.forEach(function (it) { if (!cur && it.main === main) cur = it; });
+    if (!cur) { // search index not updated yet: the post itself still belongs in the list
+      var t = $('.post .post__meta time');
+      cur = { href: '', main: main, n: me.n, ep: me.ep, date: t ? t.textContent : '' };
+      list.push(cur);
+    }
+    if (list.length < 2) return;
+    var key = function (it) { var d = ymd(it.date); return d ? d.join('') : ''; };
+    list.sort(function (a, b) {
+      if (a.n !== null && b.n !== null && a.n !== b.n) return a.n - b.n;
+      return key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0;
+    });
+    var head = $('.series-nav__title', box), ol = $('.series-nav__list', box), at = list.indexOf(cur);
+    var span = function (cls, text) { var s = doc.createElement('span'); s.className = cls; s.textContent = text; return s; };
+    head.textContent = '';
+    head.appendChild(span('series-nav__label', '시리즈'));
+    head.appendChild(span('series-nav__name', me.key));
+    head.appendChild(span('series-nav__count', list.length + '편'));
+    list.forEach(function (it, i) {
+      var li = doc.createElement('li'), el = doc.createElement(it === cur ? 'span' : 'a'), d = ymd(it.date);
+      li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 3 ? ' is-far' : '');
+      el.className = 'series-nav__link';
+      if (it === cur) el.setAttribute('aria-current', 'page'); else el.href = it.href;
+      el.appendChild(span('series-nav__ep', it.ep || (d ? d[1] + '.' + d[2] : String(i + 1))));
+      el.appendChild(span('series-nav__main', it.main));
+      li.appendChild(el);
+      ol.appendChild(li);
+    });
+    if (list.length > 9) { // long series: the posts around this one, then the rest on request
+      var more = doc.createElement('button');
+      more.type = 'button'; more.className = 'series-nav__more'; more.textContent = '전체 ' + list.length + '편 보기';
+      more.addEventListener('click', function () { box.classList.add('is-open'); more.remove(); });
+      box.appendChild(more);
+    } else box.classList.add('is-open');
+    box.hidden = false;
+    // The series label above the title now leads to the list.
+    var link = doc.createElement('a');
+    link.className = sEl.className + ' series--link';
+    link.href = '#series';
+    link.textContent = sEl.textContent;
+    sEl.parentNode.replaceChild(link, sEl);
+  }
+
+  /* ---------- Author: one card with Tistory's namecard ----------
+     [##_comment_group_##] renders Tistory's namecard (blog name, description, 구독하기) right before the comments.
+     Once it shows up, the skin's own card steps aside and only its link row (GitHub, 포트폴리오 ...) moves under the
+     namecard. Tistory's elements are never hidden or moved; without a namecard the skin's card stays as it is. */
+  function initAuthorMerge() {
+    var card = $('.post .author'), host = $('.post .comments [data-tistory-react-app="Namecard"]');
+    var links = card && $('.author__links', card);
+    if (!links || !host) return;
+    function merge() {
+      if (!$('.tt_box_namecard', host)) return false;
+      links.classList.add('author__links--merged');
+      host.parentNode.insertBefore(links, host.nextSibling);
+      card.hidden = true;
+      return true;
+    }
+    if (merge() || !window.MutationObserver) return;
+    var mo = new MutationObserver(function () { if (merge()) mo.disconnect(); });
+    mo.observe(host, { childList: true, subtree: true });
+    setTimeout(function () { mo.disconnect(); }, 8000);
+  }
+
+  /* ---------- Search results: the searched words are marked in titles and summaries ---------- */
+  function initSearchMark() {
+    if (doc.body.id !== 'tt-body-search') return;
+    var input = $('#search input'), q = input ? input.value : '';
+    if (!q) { var m = location.pathname.match(/\/search\/([^/]+)/); if (m) { try { q = decodeURIComponent(m[1]); } catch (e) {} } }
+    var terms = (q || '').split(/\s+/).filter(Boolean).map(function (t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!terms.length) return;
+    var re = new RegExp('(' + terms.join('|') + ')', 'i');
+    $$('.list .idx__title, .list .idx__sum').forEach(function (el) {
+      var walker = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), nodes = [], n;
+      while ((n = walker.nextNode())) nodes.push(n);
+      nodes.forEach(function (node) {
+        var parts = node.nodeValue.split(re);
+        if (parts.length < 2) return;
+        var frag = doc.createDocumentFragment();
+        parts.forEach(function (p, i) {
+          if (!p) return;
+          if (i % 2) { var mk = doc.createElement('mark'); mk.className = 'hit'; mk.textContent = p; frag.appendChild(mk); }
+          else frag.appendChild(doc.createTextNode(p));
+        });
+        node.parentNode.replaceChild(frag, node);
+      });
+    });
+  }
+
   function init() {
     initTheme();
     initHeader();
@@ -559,10 +752,16 @@
     initSubnav();
     initCrumbs();
     initCatLabels();
+    initSearchMark();
     initPaging();
     initIndex();
     var content = $('.post #article-view');
-    if (content) { initMarkdown(content); initCode(content); initTables(content); initReadTime(content); initToc(content); initProgress(content); }
+    if (content) {
+      initMarkdown(content); initCode(content); initTables(content); initReadTime(content);
+      var heads = tocHeads(content);
+      initToc(content, heads); initHeadingLinks(heads); initProgress(content);
+      initSeriesNav(); initAuthorMerge();
+    }
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init); else init();
 })();

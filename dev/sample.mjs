@@ -104,6 +104,10 @@ deployment "sample-api" successfully rolled out</code></pre>
 <p data-ke-size="size16">마지막 문단입니다. 이 아래로 태그, 이전·다음 글, 같은 카테고리의 글, 댓글이 이어집니다.</p>
 </div>`;
 
+// A code block over 40 lines: script.js folds it to its first lines with a "전체 보기 (N줄)" bar.
+const longCode = `<pre class="java" data-ke-language="java"><code>${Array.from({ length: 52 }, (_, i) =>
+  i === 0 ? 'public class RetryPolicy {' : i === 51 ? '}' : `    // ${String(i).padStart(2, '0')}번째 줄: 접힌 코드 미리보기를 확인하기 위한 샘플 코드입니다.`).join('\n')}</code></pre>`;
+
 const sidebar = {
   sidebar: true, sidebar_element: true, search: true,
   rctps_rep: titles.slice(0, 5).map((t, i) => ({ rctps_rep_link: '#', rctps_rep_title: t, rctps_rep_simple_date: date(18 - i) })),
@@ -170,7 +174,7 @@ export const pages = {
     body_id: 'tt-body-search', search_text: '배포',
     list: { list_conform: '배포', list_count: 0, list_description: '블로그 설명', list_style: '', list_empty: true, list_rep: [] },
   },
-  post: { body_id: 'tt-body-page', article_rep: [article({ article_rep_desc: articleBody + tistoryTail })] },
+  post: { body_id: 'tt-body-page', article_rep: [article({ article_rep_desc: articleBody.replace('</div>', longCode + '</div>') + tistoryTail })] },
   'post-related': { body_id: 'tt-body-page', article_rep: [article()] },
   'post-dark': { body_id: 'tt-body-page', article_rep: [article()], vars: { colorScheme: 'dark' } },
   'category-summary': { body_id: 'tt-body-category', path: '/category/개발/Backend', list: { list_conform: 'Backend', list_count: 96, list_description: '카테고리 설명이 있으면 여기에 표시됩니다.', list_style: '', list_empty: false, list_rep: listRep }, paging, vars: { listStyle: 'summary' } },
@@ -213,3 +217,26 @@ pages['post-md'] = { body_id: 'tt-body-page', article_rep: [article({ article_re
 
 // Home with an intro sentence filled in (the default ships empty).
 pages['home-hero'] = { ...pages.home, vars: { heroText: '소개 문장 자리입니다. *강조*할 단어는 별표로 감쌉니다.', heroSub: '한 줄 소개 자리' } };
+
+// Stand-in for the blog's own /search/<words> page. script.js fetches it (window.__SKIN_SEARCH__, set by render.mjs)
+// for the series list at the end of a post and for the header search preview. The local server ignores the query,
+// so every search returns these rows: one 12-part series (3일차 is the sample post), a post from another series
+// with the same words, and a post that only mentions the words. The last two must be filtered out of the series.
+const TOPICS = ['주제를 고르는 기준', '대시보드를 버리고 생각해 보면', '아이디어를 꼬아 간 생각의 순서', '데이터 흐름 그리기', 'API 초안',
+  '첫 배포', '로그가 말해 준 것', '부하 테스트', '캐시를 넣을까 말까', '발표 리허설', '피드백 반영', '최종 발표와 회고'];
+const seriesRows = TOPICS.map((topic, i) => ({
+  title: `[샘플 과정] 최종 프로젝트 ${i + 1}일차 :: ${topic}`, link: `/entry/${500 + i}`,
+  date: `2026.11.${String(i + 7).padStart(2, '0')}`, cat: '개발/Cloud · DevOps',
+})).concat([
+  { title: '[다른 과정] 최종 프로젝트 1일차 :: 이름만 같은 다른 시리즈', link: '/entry/480', date: '2026.10.02', cat: '개발/Backend' },
+  { title: '최종 프로젝트를 준비하며 읽은 책', link: '/entry/470', date: '2026.09.20', cat: '독서' },
+]);
+pages['search-mock'] = {
+  body_id: 'tt-body-search', search_text: '최종 프로젝트',
+  list: { list_conform: '최종 프로젝트', list_count: seriesRows.length, list_description: '', list_style: '', list_empty: false,
+    list_rep: seriesRows.map((r, i) => ({
+      list_rep_link: r.link, list_rep_title: r.title, list_rep_title_text: r.title, list_rep_summary: summary,
+      list_rep_regdate: r.date, list_rep_category: r.cat, list_rep_category_link: '#', list_rep_rp_cnt: i % 4, list_rep_author: '샘플 필명',
+      list_rep_thumbnail: i % 3 ? '' : img(400, 300, 150 + i * 12), list_rep_thumbnail_url: img(400, 300, 150 + i * 12),
+    })) },
+};
