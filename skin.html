@@ -25,10 +25,59 @@
       if (pref !== 'light' && pref !== 'dark') pref = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.setAttribute('data-theme', pref);
     })();
+
+    /* Home guide (이어 읽기 · 연재 중). Called inline right after the home lists are parsed, so the guide is in place
+       before the list paints and nothing below it shifts. Everything comes from those lists and this browser's own
+       reading log (written by images/script.js); with nothing to show the guide stays hidden. */
+    window.salieriGuide = function () {
+      var d = document, box = d.querySelector('.guide');
+      if (!box || box.getAttribute('data-built') || d.body.id !== 'tt-body-index' || /(^| )guide-off( |$)/.test(d.body.className)) return;
+      box.setAttribute('data-built', '1');
+      if (/[?&]page=(?!1(&|$))\d+/.test(location.search)) return; // first page only
+      var EP = /^(.+?)\s*(\d+)\s*(일\s*차|회차|회|편|화|부|주차|강|장)$/;
+      function el(tag, cls, text) { var e = d.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+      function column(kind, heading, items) {
+        if (!items.length) return;
+        var col = el('div', 'guide__col guide__col--' + kind), list = el('ul', 'guide__list');
+        col.appendChild(el('h2', 'guide__title', heading));
+        for (var i = 0; i < items.length; i++) {
+          var li = el('li'), a = el('a', 'guide__link');
+          a.href = items[i].href;
+          a.appendChild(el('span', 'guide__name', items[i].name));
+          if (items[i].meta) a.appendChild(el('span', 'guide__meta', items[i].meta));
+          li.appendChild(a); list.appendChild(li);
+        }
+        col.appendChild(list); box.appendChild(col);
+      }
+      var log = {}, open = [], k;
+      try { log = JSON.parse(localStorage.getItem('salieri-read') || '{}') || {}; } catch (e) {}
+      for (k in log) if (log[k] && log[k].t && log[k].p >= 0.1 && log[k].p < 0.9) open.push(k);
+      open.sort(function (a, b) { return (log[b].at || 0) - (log[a].at || 0); });
+      column('resume', '이어 읽기', open.slice(0, 2).map(function (k) {
+        return { href: k, name: log[k].t, meta: Math.round(log[k].p * 100) + '% 읽음' + (log[k].l ? ' · ' + log[k].l : '') };
+      }));
+      var groups = {}, order = [], rows = d.querySelectorAll('.covers .idx__row, .idx--loose .idx__row');
+      for (var r = 0; r < rows.length; r++) {
+        var a = rows[r].querySelector('a[href]'), t = rows[r].querySelector('.idx__title');
+        if (!a || !t) continue;
+        var text = t.textContent.replace(/\s+/g, ' '), at = text.indexOf('::');
+        if (at < 1) continue;
+        var m = text.slice(0, at).trim().match(EP), main = text.slice(at + 2).trim();
+        if (!m || !main) continue;
+        var key = m[1].trim(), g = key.toLowerCase();
+        if (!groups[g]) { groups[g] = { name: key, href: a.getAttribute('href'), latest: m[2] + m[3].replace(/\s+/g, '') + ' · ' + main, n: 0 }; order.push(g); }
+        groups[g].n++;
+      }
+      column('series', '연재 중', order.slice(0, 3).map(function (g) {
+        var s = groups[g];
+        return { href: s.href, name: s.name, meta: s.latest + (s.n > 1 ? ' · 최근 글 중 ' + s.n + '편' : '') };
+      }));
+      if (box.children.length) box.hidden = false;
+    };
   </script>
 </head>
 
-<body id="[##_body_id_##]" class="toc-[##_var_tocMode_##] list-[##_var_listStyle_##]">
+<body id="[##_body_id_##]" class="toc-[##_var_tocMode_##] list-[##_var_listStyle_##] guide-[##_var_homeGuide_##]">
 <s_t3>
   <a class="skip-link" href="#main">본문 바로가기</a>
   <div class="progress" aria-hidden="true"><span class="progress__bar"></span></div>
@@ -93,6 +142,10 @@
 
       <!-- Top-level categories as tabs (index + lists) -->
       <nav class="tabs" aria-label="카테고리">[##_category_list_##]</nav>
+
+      <!-- Home guide (index only; skin option 홈 길잡이): 이어 읽기 · 연재 중 · 많이 읽힌 글, built by script.js from this
+           page's own lists and the visitor's browser. Stays hidden when there is nothing to show. -->
+      <section class="guide" aria-label="길잡이" hidden></section>
 
       <!-- ===== Home covers ===== -->
       <s_cover_group>
@@ -168,6 +221,7 @@
 
           </s_cover_rep>
         </div>
+        <script>window.salieriGuide && window.salieriGuide();</script>
       </s_cover_group>
 
       <!-- ===== Category / search / tag / archive list ===== -->
@@ -328,6 +382,8 @@
           </article>
         </s_permalink_article_rep>
       </s_article_rep>
+      <!-- Home without covers: Tistory lists the posts above (index_article_rep), so the guide is built here -->
+      <script>window.salieriGuide && window.salieriGuide();</script>
 
       <!-- Protected post -->
       <s_article_protected>

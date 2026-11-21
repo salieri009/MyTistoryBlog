@@ -78,6 +78,14 @@ const coverItems = titles.map((t, i) => ({
 }));
 // Tistory prints only the time for a post written today (seen on the live home): the first row reproduces it.
 coverItems[0].cover_item_simple_date = '14:48:21';
+// The home index also carries episodes of other series (dated between the 11.15 and 2025 rows), so the home guide's
+// "연재 중" has more than one series to group.
+const moreSeries = [
+  ['[샘플 캠프] 해커톤 4일차 :: 기획을 다시 쪼개기', '2026.11.12', '개발/Frontend'],
+  ['[샘플 캠프] 해커톤 3일차 :: 화면 흐름 정하기', '2026.11.11', '개발/Frontend'],
+  ['[샘플 과정] 미니 프로젝트 5일차 :: README 쓰기', '2026.11.08', '개발/Backend'],
+].map(([t, d, c], i) => ({ ...coverItems[3], cover_item_title: t, cover_item_simple_date: d, cover_item_category: c, cover_item_url: `/entry/${420 + i}`, cover_item_thumbnail: '' }));
+const homeIndexItems = coverItems.slice(0, 3).concat(moreSeries, coverItems.slice(3));
 
 const articleBody = `<div class="tt_article_useless_p_margin contents_style">
 <p data-ke-size="size16">샘플 본문입니다. 이 미리보기는 스킨이 티스토리 에디터 출력물을 어떻게 보여주는지 확인하기 위한 가짜 글입니다. 문단, 소제목, 목록, 인용, 코드, 표, 이미지가 모두 들어 있습니다. 한글 문장은 <code>word-break: keep-all</code>로 어절 단위로 줄바꿈되고, 아주 긴 영문 토큰 <code>org.springframework.boot.autoconfigure.SpringBootApplication</code>은 칸을 넘지 않아야 합니다.</p>
@@ -154,7 +162,7 @@ export const site = {
   search_name: 'search', search_text: '', search_onclick_submit: "location.href='#'",
   revenue_list_upper: '', revenue_list_lower: '', count_total: '123,456', count_today: '321', count_yesterday: '654',
   ...sidebar,
-  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', logoImage: '', footerCopyright: '', heroText: '', heroSub: '', githubUrl: '#', portfolioUrl: '#', velogUrl: '#', linkedinUrl: '#', twitterUrl: '#', email: '' },
+  vars: { colorScheme: 'auto', tocMode: 'on', listStyle: 'index', homeGuide: 'on', logoImage: '', footerCopyright: '', heroText: '', heroSub: '', githubUrl: '#', portfolioUrl: '#', velogUrl: '#', linkedinUrl: '#', twitterUrl: '#', email: '' },
 };
 
 // What Tistory appends inside the body on the live blog: reaction/share buttons, then
@@ -185,7 +193,7 @@ export const pages = {
   home: {
     body_id: 'tt-body-index',
     cover_group: { cover_rep: [
-      { __cover: 'index', cover_title: '최근 글', cover_url: '#', cover_item: coverItems },
+      { __cover: 'index', cover_title: '최근 글', cover_url: '#', cover_item: homeIndexItems },
       { __cover: 'featured', cover_title: '추천 글', cover_url: '', cover_item: coverItems.slice(0, 3) },
       { __cover: 'gallery', cover_title: '사진이 있는 글', cover_url: '#', cover_item: coverItems.slice(0, 6) },
     ] },

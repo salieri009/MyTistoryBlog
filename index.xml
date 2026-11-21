@@ -170,6 +170,21 @@
         <default>index</default>
       </variable>
       <variable>
+        <name>homeGuide</name>
+        <label><![CDATA[ 홈 길잡이 ]]></label>
+        <description><![CDATA[ 홈 글 목록 위에 이어 읽기 · 연재 중인 시리즈 · 많이 읽힌 글을 보여 줍니다. 내용은 블로그의 글 목록과 방문자 브라우저의 읽은 기록에서 오고, 보여 줄 것이 없으면 나타나지 않습니다. ]]></description>
+        <type>SELECT</type>
+        <option>
+          <![CDATA[
+          [
+            {"name":"on", "label":"표시", "value":"on"},
+            {"name":"off", "label":"숨김", "value":"off"}
+          ]
+          ]]>
+        </option>
+        <default>on</default>
+      </variable>
+      <variable>
         <name>tocMode</name>
         <label><![CDATA[ 글 목차 ]]></label>
         <description><![CDATA[ 소제목이 2개 이상인 글에 목차를 표시합니다. ]]></description>
