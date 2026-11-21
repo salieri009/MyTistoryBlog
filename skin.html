@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>[##_page_title_##]</title>
   <link rel="alternate" type="application/rss+xml" title="[##_title_##]" href="[##_rss_url_##]">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <!-- Mono is only for code and dates (fixed-width columns), so it loads without holding up the first paint -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"></noscript>
   <link rel="stylesheet" href="./style.css">
   <!-- Faster next page: a same-site link is fetched as the visitor starts to click it (pointer down), not on hover, so
        Tistory's view counts are not inflated by posts nobody opened. Prefetch only, never prerender: no ad or analytics
@@ -25,6 +28,46 @@
       if (pref !== 'light' && pref !== 'dark') pref = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.setAttribute('data-theme', pref);
     })();
+
+    /* Post head and body, settled while the page is parsed (called inline right after the title and right after the
+       body) instead of later from images/script.js, so the title, meta row and contents box do not move after they
+       first paint. script.js sees the work done and skips it. */
+    window.salieriHead = function () {
+      var d = document, h = d.querySelector('.post .post__title.js-series'), c = d.querySelector('.post .js-crumbs');
+      // "[과정] 3일차 :: 주제" -> series label + title (same as initSeries in script.js)
+      if (h && !h.classList.contains('has-series')) {
+        for (var n = h.firstChild; n; n = n.nextSibling) {
+          if (n.nodeType !== 3) continue;
+          var i = n.nodeValue.indexOf('::'), left = i > 0 ? n.nodeValue.slice(0, i).trim() : '', right = i > 0 ? n.nodeValue.slice(i + 2).trim() : '';
+          if (!left || !right) continue;
+          var s = d.createElement('span'), m = d.createElement('span');
+          s.className = 'series'; s.textContent = left; m.className = 'series-main'; m.textContent = right;
+          h.insertBefore(s, n); h.replaceChild(m, n); h.classList.add('has-series');
+          break;
+        }
+      }
+      // "부모/자식" category -> two linked steps (same as initCrumbs in script.js)
+      if (c && c.textContent.indexOf('/') !== -1) {
+        var parts = c.textContent.split('/').map(function (t) { return t.trim(); }).filter(Boolean);
+        if (parts.length > 1) {
+          var href = c.getAttribute('href') || '', segs = href.split('/'), p = d.createElement('a');
+          p.className = 'crumbs__link crumbs__link--parent'; p.href = segs.length > 3 ? segs.slice(0, -1).join('/') : href; p.textContent = parts[0];
+          c.textContent = parts[parts.length - 1];
+          c.parentNode.insertBefore(p, c);
+          p.insertAdjacentHTML('afterend', '<svg class="crumbs__sep" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');
+        }
+      }
+    };
+    window.salieriBody = function () {
+      var d = document, c = d.querySelector('.post #article-view');
+      if (!c) return;
+      var r = d.querySelector('.post .js-readtime'); // ~600 Hangul characters a minute
+      if (r && r.hidden) { r.textContent = '약 ' + Math.max(1, Math.round((c.textContent || '').replace(/\s+/g, '').length / 600)) + '분'; r.hidden = false; }
+      // The contents box (phones, tablets) ships visible; a post with fewer than two section headings drops it here.
+      var t = d.querySelector('.post .toc-inline'), hs = c.querySelectorAll('h2, h3'), k = 0;
+      for (var i = 0; i < hs.length; i++) if (!hs[i].closest('.another_category, figure, blockquote') && hs[i].textContent.replace(/\s| /g, '').length) k++;
+      if (t && k < 2) t.hidden = true;
+    };
 
     /* Home guide (이어 읽기 · 연재 중). Called inline right after the home lists are parsed, so the guide is in place
        before the list paints and nothing below it shifts. Everything comes from those lists and this browser's own
@@ -274,6 +317,7 @@
             <header class="post__head">
               <nav class="crumbs" aria-label="카테고리"><a class="crumbs__link js-crumbs" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a></nav>
               <h1 class="post__title js-series">[##_article_rep_title_##]</h1>
+              <script>window.salieriHead && window.salieriHead();</script>
               <div class="post__meta">
                 <span class="byline"><img class="byline__img" src="[##_image_##]" alt="" loading="lazy">[##_article_rep_author_##]</span>
                 <time>[##_article_rep_date_##]</time>
@@ -307,12 +351,13 @@
               </s_ad_div>
             </header>
 
-            <details class="toc-inline" hidden>
+            <details class="toc-inline">
               <summary>목차</summary>
               <nav class="toc" aria-label="이 글의 목차"></nav>
             </details>
 
             <div class="entry-content" id="article-view">[##_article_rep_desc_##]</div>
+            <script>window.salieriBody && window.salieriBody();</script>
 
             <s_tag_label>
               <div class="post__tags"><h2 class="sr-only">태그</h2><div class="tags">[##_tag_label_rep_##]</div></div>

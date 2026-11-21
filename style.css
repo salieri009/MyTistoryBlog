@@ -5,6 +5,14 @@
    Visual system: DESIGN.md · Product truth: PRODUCT.md
    ========================================================= */
 
+/* ---------- 0. Font fallback ----------
+   Pretendard arrives after the first paint on a slow first visit. Until then Windows draws Malgun Gothic, which is
+   about 15% wider in Hangul (measured: Pretendard = 84-85% of Malgun's width in Hangul, 91% in mixed text), so titles
+   and paragraphs re-wrapped when Pretendard landed and the post jumped (lab CLS 0.2+ on a post). This face is Malgun
+   Gothic scaled to Pretendard's width; systems without Malgun skip it (Apple's fallback is already close). */
+@font-face { font-family: "Pretendard Fallback"; src: local("Malgun Gothic"), local("MalgunGothic-Regular"), local("MalgunGothicRegular"); font-weight: 100 549; size-adjust: 86%; }
+@font-face { font-family: "Pretendard Fallback"; src: local("Malgun Gothic Bold"), local("MalgunGothic-Bold"), local("MalgunGothicBold"); font-weight: 550 900; size-adjust: 85%; }
+
 /* ---------- 1. Tokens ---------- */
 :root {
   --bg: #FFFFFF;
@@ -21,7 +29,7 @@
   --mark: #FDE68A;  --mark-ink: #B45309;                           /* 강조 */
   --code-bg: #1E293B;  --code-ink: #E2E8F0;  --code-line: #334155;  /* Evidence */
 
-  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font: "Pretendard Variable", Pretendard, "Pretendard Fallback", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --mono: "Cascadia Code", "JetBrains Mono", D2Coding, Consolas, monospace;
   --ease: cubic-bezier(.16, 1, .3, 1);
   --column: 720px;
@@ -337,6 +345,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .post__title .series--link:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
 .series__pos { font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .series__pos::before { content: "·"; margin: 0 8px; }
+/* It arrives with the series list, after the page has painted; on a phone it would wrap the label onto a second line
+   and push the post down, so there the series list at the end carries the count instead. */
+@media (max-width: 719.98px) { .series__pos { display: none; } }
 .post__meta { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 16px; font-size: 14px; color: var(--ink-3); }
 .post__meta > *:not([hidden]) + *:not([hidden])::before { content: "·"; margin: 0 8px; }
 .post__meta a:hover { color: var(--ink); }
@@ -376,7 +387,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   .toc-rail__title { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-3); letter-spacing: .04em; }
   .toc-rail__top { display: inline-block; margin-top: 16px; font-size: 13px; color: var(--ink-3); }
   .toc-rail__top:hover { color: var(--accent); }
-  .has-toc .toc-inline { display: none; }
+  .toc-inline { display: none; } /* desktop uses the rail; the box ships visible for phones (see skin.html salieriBody) */
 }
 .toc-off .toc-inline, .toc-off .toc-rail, .toc-off .toc-fab { display: none !important; }
 
@@ -554,7 +565,7 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .post #article-view a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .post #article-view a:hover { text-decoration-thickness: 2px; }
 /* Section links (script.js initHeadingLinks): quiet "#" after each outline heading, shown on hover or focus */
-.post #article-view .heading-link { margin-left: .3em; padding: 0 .15em; font-size: .78em; font-weight: 500; color: var(--ink-3); text-decoration: none; opacity: 0; transition: opacity .15s var(--ease); }
+.post #article-view .heading-link { position: absolute; margin-left: .3em; padding: 0 .15em; /* takes no room: added late, it never rewraps the heading */ font-size: .78em; font-weight: 500; color: var(--ink-3); text-decoration: none; opacity: 0; transition: opacity .15s var(--ease); }
 .post #article-view h2:hover .heading-link, .post #article-view h3:hover .heading-link, .post #article-view .heading-link:focus-visible, .post #article-view .heading-link.is-done { opacity: 1; }
 .post #article-view .heading-link:hover { color: var(--accent); }
 .post #article-view .heading-link.is-done { font-size: 13px; font-weight: 600; color: var(--ok-ink); }
@@ -597,8 +608,9 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .post #article-view :not(pre) > code { font: .86em var(--mono); padding: .15em .4em; border-radius: 4px; background: var(--soft); border: 1px solid var(--line); color: var(--ink); word-break: normal; overflow-wrap: anywhere; }
 
 /* Code blocks = Salieri "Evidence" panel */
-.post #article-view pre { position: relative; margin: 1.8em 0; padding: 0; border-radius: 10px; overflow: hidden; background: var(--code-bg) !important; border: 1px solid var(--code-line); color: var(--code-ink); }
-.code-bar { display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--code-line); font: 600 12px var(--font); color: #94A3B8; }
+/* The bar (language + copy) is added by script.js; its 36px are reserved up front so the code never moves down */
+.post #article-view pre { position: relative; margin: 1.8em 0; padding: 36px 0 0; border-radius: 10px; overflow: hidden; background: var(--code-bg) !important; border: 1px solid var(--code-line); color: var(--code-ink); }
+.code-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; height: 36px; padding: 0 8px 0 16px; border-bottom: 1px solid var(--code-line); font: 600 12px var(--font); color: #94A3B8; }
 .code-copy { height: 26px; padding: 0 10px; border: 1px solid #334155; border-radius: 6px; background: none; color: #CBD5E1; font: 600 12px var(--font); cursor: pointer; }
 .code-copy:hover { background: #334155; color: #fff; }
 .code-copy.is-done { color: #86EFAC; border-color: #166534; }
@@ -730,6 +742,14 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .gallery__title .series { font-size: 12px; }
 
 /* ---------- 10. Motion & print ---------- */
+/* Moving between pages of the blog: a short crossfade instead of a blank flash, with the header held still.
+   Same-origin navigations only; browsers without cross-document view transitions navigate as before. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; animation-timing-function: var(--ease); }
+  .site-header { view-transition-name: site-header; }
+  ::view-transition-group(site-header) { animation-duration: 0s; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }

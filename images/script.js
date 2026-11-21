@@ -367,6 +367,25 @@
     }
   }
 
+  /* ---------- Breadcrumb structured data ----------
+     Tistory already prints BlogPosting JSON-LD for each post; the category path is the piece it leaves out. Built from
+     the breadcrumb the reader sees (blog > parent > category), serialized with JSON.stringify so names are escaped. */
+  function initBreadcrumbLd() {
+    var crumbs = $$('.post .crumbs a[href]'), home = $('.logo');
+    if (!crumbs.length || !home || $('script[data-salieri-ld]')) return;
+    var logoImg = $('img', home), homeName = home.textContent.trim() || (logoImg ? (logoImg.getAttribute('alt') || '').trim() : '');
+    var items = [{ name: homeName, href: home.href }]
+      .concat(crumbs.map(function (a) { return { name: a.textContent.trim(), href: a.href }; }));
+    var ld = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.filter(function (it) { return it.name && /^https?:/.test(it.href); }).map(function (it, i) {
+      return { '@type': 'ListItem', position: i + 1, name: it.name, item: it.href };
+    }) };
+    if (ld.itemListElement.length < 2) return;
+    var s = doc.createElement('script');
+    s.type = 'application/ld+json'; s.setAttribute('data-salieri-ld', '');
+    s.textContent = JSON.stringify(ld);
+    doc.head.appendChild(s);
+  }
+
   /* ---------- Paging: disabled arrows are not links ---------- */
   function initPaging() {
     $$('.paging__arrow.no-more-prev, .paging__arrow.no-more-next').forEach(function (a) {
@@ -701,7 +720,7 @@
   }
   function initReadTime(content) {
     var el = $('.js-readtime');
-    if (!el) return;
+    if (!el || !el.hidden) return; // already filled inline (skin.html salieriBody)
     var chars = content.innerText.replace(/\s+/g, '').length;
     var min = Math.max(1, Math.round(chars / 600)); // ~600 Hangul chars per minute
     el.textContent = '약 ' + min + '분';
@@ -729,7 +748,7 @@
     place(); window.addEventListener('resize', place); window.addEventListener('load', place);
   }
   function initToc(content, heads) {
-    if (doc.body.classList.contains('toc-off') || heads.length < 2) return;
+    if (doc.body.classList.contains('toc-off') || heads.length < 2) { var box = $('.toc-inline'); if (box) box.hidden = true; return; }
     // Labels are read once: section links get appended to the headings afterwards.
     var labels = heads.map(function (h) { return h.textContent.trim(); });
     var list = doc.createElement('ol'), current = null;
@@ -1155,6 +1174,7 @@
     initCurrent();
     initSubnav();
     initCrumbs();
+    initBreadcrumbLd();
     initCatLabels();
     initListHead();
     initSearchMark();
