@@ -71,6 +71,142 @@
     if (p && setSearch) p.addEventListener('click', function () { setSearch(false); });
     var input = $('#search input');
     if (doc.body.id === 'tt-body-search' && input && input.value && setSearch) setSearch(true);
+    // "/" opens search from anywhere on the page (not while typing)
+    if (setSearch) doc.addEventListener('keydown', function (e) {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+      var t = e.target, tag = t && t.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+      e.preventDefault();
+      if (setPanel) setPanel(false);
+      setSearch(true);
+    });
+    initLiveSearch();
+  }
+
+  /* ---------- Search as you type ----------
+     After a pause in typing, the header search shows the first five matches from the blog's own search page
+     (same origin, the same request the full results page makes). Arrow keys move through them, Enter opens one;
+     with nothing picked, Enter still runs Tistory's full search. */
+  function escRe(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function markText(cls, text, re) {
+    var el = doc.createElement('span');
+    el.className = cls;
+    text.split(re).forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2) { var m = doc.createElement('mark'); m.className = 'hit'; m.textContent = part; el.appendChild(m); }
+      else el.appendChild(doc.createTextNode(part));
+    });
+    return el;
+  }
+  function initLiveSearch() {
+    var input = $('#search .search__input'), box = $('#search .search__suggest');
+    if (!input || !box || !window.fetch || !window.DOMParser) return;
+    var list = $('.search__results', box), status = $('.search__status', box);
+    var timer = null, ctrl = null, active = -1, memo = {};
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', list.id);
+    input.setAttribute('aria-expanded', 'false');
+    var opts = function () { return $$('[role="option"]', list); };
+    function setActive(i) {
+      var o = opts();
+      if (!o.length) return;
+      active = (i + o.length) % o.length;
+      o.forEach(function (el, j) { el.setAttribute('aria-selected', j === active ? 'true' : 'false'); });
+      input.setAttribute('aria-activedescendant', o[active].id);
+    }
+    function close() {
+      box.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+      active = -1;
+    }
+    function option(id, a) {
+      var li = doc.createElement('li');
+      li.id = id; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', 'false');
+      a.tabIndex = -1;
+      li.appendChild(a);
+      list.appendChild(li);
+    }
+    function render(q, res) {
+      list.textContent = ''; active = -1; input.removeAttribute('aria-activedescendant');
+      var re = new RegExp('(' + q.split(/\s+/).filter(Boolean).map(escRe).join('|') + ')', 'i');
+      res.rows.slice(0, 5).forEach(function (r, i) {
+        var a = doc.createElement('a'), parts = splitTitle(r.title);
+        a.href = r.href; a.className = 'search__hit';
+        if (parts) a.appendChild(markText('search__series', parts.label, re));
+        a.appendChild(markText('search__title', parts ? parts.main : r.title, re));
+        var meta = [dateLabel(r.date), r.cat.split('/').pop().trim()].filter(Boolean).join(' · ');
+        if (meta) { var m = doc.createElement('span'); m.className = 'search__meta'; m.textContent = meta; a.appendChild(m); }
+        option('search-opt-' + i, a);
+      });
+      if (res.count > 5) {
+        var all = doc.createElement('a');
+        all.href = '/search/' + encodeURIComponent(q); all.className = 'search__all';
+        all.textContent = '‘' + q + '’ 검색 결과 ' + res.count + '편 모두 보기';
+        option('search-opt-all', all);
+      }
+      status.textContent = res.rows.length ? '' : '‘' + q + '’와 일치하는 글이 없습니다';
+      box.hidden = false;
+      input.setAttribute('aria-expanded', res.rows.length ? 'true' : 'false');
+    }
+    function run() {
+      var q = input.value.trim();
+      if (q.length < 2 && !/[가-힣]/.test(q)) { close(); return; }
+      if (memo[q]) { render(q, memo[q]); return; }
+      if (ctrl) ctrl.abort();
+      ctrl = window.AbortController ? new AbortController() : null;
+      status.textContent = '찾는 중…';
+      box.hidden = false;
+      searchPage(q, ctrl && ctrl.signal).then(function (res) {
+        memo[q] = res;
+        if (input.value.trim() === q) render(q, res);
+      }, function (e) {
+        if (e && e.name === 'AbortError') return;
+        status.textContent = ''; close(); // the full search (Enter) still works
+      });
+    }
+    input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(run, 300); });
+    input.addEventListener('keydown', function (e) {
+      if (box.hidden) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+      else if (e.key === 'Enter' && active >= 0) { e.preventDefault(); location.href = $('a', opts()[active]).href; }
+      else if (e.key === 'Escape') { e.stopPropagation(); close(); } // a second Esc closes the search bar
+    });
+    doc.addEventListener('click', function (e) { if (!box.contains(e.target) && e.target !== input) close(); });
+  }
+
+  /* ---------- Lists: clearer heads, and an empty search that still leads somewhere ---------- */
+  function initListHead() {
+    var title = $('.list .list__title'), id = doc.body.id;
+    if (title && id === 'tt-body-search' && title.textContent.trim()) title.textContent = '‘' + title.textContent.trim() + '’ 검색 결과';
+    if (title && id === 'tt-body-tag' && title.textContent.trim() && title.textContent.trim().charAt(0) !== '#') title.textContent = '#' + title.textContent.trim();
+    var empty = $('.list .empty');
+    if (!empty || !empty.getClientRects().length || $('.empty-help')) return;
+    var help = doc.createElement('div');
+    help.className = 'empty-help';
+    var section = function (heading, body) {
+      var s = doc.createElement('section'), h = doc.createElement('h2');
+      h.className = 'empty-help__title'; h.textContent = heading;
+      s.appendChild(h); s.appendChild(body); help.appendChild(s);
+    };
+    var popular = $('.aside .module--popular .module__list');
+    if (popular && popular.children.length) section('많이 읽힌 글', popular.cloneNode(true));
+    var tops = $$('.panel__tree .category_list > li > a.link_item');
+    if (tops.length) {
+      var chips = doc.createElement('nav');
+      chips.className = 'subnav'; chips.setAttribute('aria-label', '카테고리');
+      tops.forEach(function (a) {
+        var chip = doc.createElement('a'), c = $('.c_cnt', a), label = a.cloneNode(true);
+        $$('.c_cnt, img', label).forEach(function (x) { x.remove(); });
+        chip.href = a.getAttribute('href'); chip.className = 'subnav__chip'; chip.textContent = label.textContent.trim();
+        if (c && !c.hidden && c.textContent) { var n = doc.createElement('span'); n.className = 'subnav__count'; n.textContent = c.textContent; chip.appendChild(n); }
+        chips.appendChild(chip);
+      });
+      section('카테고리', chips);
+    }
+    if (help.children.length) empty.parentNode.insertBefore(help, empty.nextSibling);
   }
 
   /* ---------- Hero: *word* in the hero text becomes an accent ---------- */
@@ -792,23 +928,33 @@
     var cacheKey = 'salieri-series:' + me.key.toLowerCase(), cached = null;
     try { cached = JSON.parse(session.get(cacheKey) || 'null'); } catch (e) {}
     if (cached && Date.now() - cached.t < 10 * 60 * 1000) { renderSeries(box, me, cached.items, sEl, mEl); return; }
+    searchPage(words).then(function (res) {
+      var items = [];
+      res.rows.forEach(function (row) {
+        var parts = splitTitle(row.title);
+        if (!parts) return;
+        var s = seriesOf(parts.label);
+        if (s.key.toLowerCase() !== me.key.toLowerCase()) return; // the words only appear in the body
+        items.push({ href: row.href, main: parts.main, n: s.n, ep: s.ep, date: row.date });
+      });
+      session.set(cacheKey, JSON.stringify({ t: Date.now(), items: items }));
+      renderSeries(box, me, items, sEl, mEl);
+    }).catch(function () {}); // no list: the post still has prev/next
+  }
+  /* The blog's own search page, read through this skin's markup: rows { href, title, date, cat } and the total count. */
+  function searchPage(words, signal) {
     // __SKIN_SEARCH__: set only by the local preview harness
-    fetch((window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words), { credentials: 'same-origin' })
+    return fetch((window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words), { credentials: 'same-origin', signal: signal })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function (html) {
-        var page = new DOMParser().parseFromString(html, 'text/html'), items = [];
+        var page = new DOMParser().parseFromString(html, 'text/html'), rows = [];
         $$('.list .idx__row', page).forEach(function (row) {
-          var a = $('a[href]', row), t = $('.idx__title', row);
-          var parts = t && splitTitle(t.textContent.replace(/\s+/g, ' '));
-          if (!a || !parts) return;
-          var s = seriesOf(parts.label);
-          if (s.key.toLowerCase() !== me.key.toLowerCase()) return; // the words only appear in the body
-          items.push({ href: a.getAttribute('href'), main: parts.main, n: s.n, ep: s.ep, date: row.getAttribute('data-date') || '' });
+          var a = $('a[href]', row), t = $('.idx__title', row), c = $('.idx__cat', row);
+          if (a && t) rows.push({ href: a.getAttribute('href'), title: t.textContent.replace(/\s+/g, ' ').trim(), date: row.getAttribute('data-date') || '', cat: c ? c.textContent.trim() : '' });
         });
-        session.set(cacheKey, JSON.stringify({ t: Date.now(), items: items }));
-        renderSeries(box, me, items, sEl, mEl);
-      })
-      .catch(function () {}); // no list: the post still has prev/next
+        var n = $('.list .list__count', page);
+        return { rows: rows, count: (n && parseInt(n.textContent, 10)) || rows.length };
+      });
   }
   function renderSeries(box, me, items, sEl, mEl) {
     var here = pathOf(location.href), main = mEl.textContent.trim(), list = items.slice(), cur = null;
@@ -1010,6 +1156,7 @@
     initSubnav();
     initCrumbs();
     initCatLabels();
+    initListHead();
     initSearchMark();
     initPaging();
     initIndex();

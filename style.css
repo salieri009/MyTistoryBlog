@@ -121,8 +121,29 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .search__form { display: flex; gap: 8px; border-bottom: 2px solid var(--rule); }
 .search__input { flex: 1; min-width: 0; height: 52px; border: 0; background: none; font-size: 20px; font-weight: 600; }
 .search__input:focus { outline: none; }
+/* The browser's own clear button, drawn in the skin's ink instead of the default blue */
+.search__input::-webkit-search-cancel-button {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-right: 6px; background: var(--ink-3); cursor: pointer;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6 6l12 12M18 6L6 18'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.search__input::-webkit-search-cancel-button:hover { background: var(--ink); }
 .search__form:focus-within { border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
 .search__btn { border: 0; background: none; font-weight: 700; color: var(--accent); cursor: pointer; padding: 0 4px; }
+/* Search as you type: the first matches under the field (script.js initLiveSearch) */
+.search__suggest[hidden] { display: none; }
+.search__status { margin: 0; font-size: 13px; color: var(--ink-3); }
+.search__status:not(:empty) { padding: 10px 0 2px; }
+.search__results { margin: 6px 0 0; padding: 0; list-style: none; }
+.search__results:empty { display: none; }
+.search__hit { display: block; margin: 0 -12px; padding: 10px 12px; border-radius: 8px; }
+.search__results [aria-selected="true"] .search__hit, .search__hit:hover { background: var(--soft); }
+.search__series { display: block; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.search__title { display: block; font-size: 16px; font-weight: 600; line-height: 1.5; color: var(--ink); }
+.search__meta { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.search__all { display: inline-block; margin-top: 4px; padding: 8px 0; font-size: 14px; font-weight: 700; color: var(--accent); }
+.search__results [aria-selected="true"] .search__all, .search__all:hover { text-decoration: underline; text-underline-offset: 4px; }
+.search mark.hit { padding: 0 .08em; border-radius: 2px; background: var(--mark); color: inherit; }
 .panel { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--soft); }
 .panel__in { padding-top: 24px; padding-bottom: 28px; }
 .panel__menu ul { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 18px; padding: 0 0 16px; list-style: none; border-bottom: 1px solid var(--line); }
@@ -276,10 +297,16 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .list__desc { flex-basis: 100%; margin: 6px 0 0; font-size: 15px; color: var(--ink-2); }
 .list__desc:empty, body:not(#tt-body-category) .list__desc { display: none; }
 #tt-body-category .list, #tt-body-search .list, #tt-body-tag .list, #tt-body-archive .list { margin-top: -1px; }
-.empty { padding: 48px 0; color: var(--ink-2); text-align: center; }
+.empty { margin: 0; padding: 24px 0 36px; color: var(--ink-2); }
 .empty--search { display: none; }
 #tt-body-search .empty--search { display: inline; }
 #tt-body-search .empty--list { display: none; }
+/* An empty list still leads somewhere: most-read posts and the top categories, copied from the blog's own modules */
+.empty-help { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 40px; padding: 0 0 32px; }
+@media (max-width: 599.98px) { .empty-help { grid-template-columns: 1fr; } }
+.empty-help__title { margin: 0 0 10px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 15px; font-weight: 750; color: var(--ink); }
+.empty-help .subnav { margin: 0; }
+.empty-help .module__list li { font-size: 15px; }
 
 /* ---------- 6. Post ---------- */
 .post__head { padding: 48px 0 0; }

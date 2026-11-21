@@ -32,6 +32,14 @@ for (const c of coverNames) if (!new RegExp(`<s_cover name=['"]${c}['"]`).test(s
 
 if (!/<s_t3>[\s\S]*<\/s_t3>/.test(skin)) errors.push('<s_t3> wrapper missing (Tistory common scripts)');
 
+// Speculation rules must be valid JSON, prefetch only (prerender would run ads and analytics before a real visit)
+for (const [, json] of skin.matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)) {
+  try {
+    const rules = JSON.parse(json);
+    if (rules.prerender) errors.push('speculationrules: prerender is not allowed (ads/analytics would run early)');
+  } catch (e) { errors.push(`speculationrules: invalid JSON (${e.message})`); }
+}
+
 // style.css: braces must balance and never go negative (a stray "}" silently kills the next rule)
 const css = readFileSync(join(ROOT, 'style.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
 let depth = 0, line = 1;
