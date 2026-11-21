@@ -108,6 +108,9 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
   font-size: 15px; color: var(--ink-2); cursor: pointer; white-space: nowrap;
 }
 .site-nav__menu a:hover, .site-nav__btn:hover, .site-nav__btn[aria-expanded="true"] { color: var(--ink); background: var(--soft); }
+/* Tistory's fixed 구독하기 toolbar (.menu_toolbar) sits over the header's right edge on desktop; script.js measures it
+   and the header keeps that width free, so search and the theme toggle stay reachable. The toolbar itself is untouched. */
+.site-header__in.has-toolbar-gap { padding-right: var(--toolbar-gap); }
 .i-sun { display: none; }
 :root[data-theme="dark"] .i-sun { display: block; }
 :root[data-theme="dark"] .i-moon { display: none; }
@@ -118,6 +121,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .search__form { display: flex; gap: 8px; border-bottom: 2px solid var(--rule); }
 .search__input { flex: 1; min-width: 0; height: 52px; border: 0; background: none; font-size: 20px; font-weight: 600; }
 .search__input:focus { outline: none; }
+.search__form:focus-within { border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
 .search__btn { border: 0; background: none; font-weight: 700; color: var(--accent); cursor: pointer; padding: 0 4px; }
 .panel { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--soft); }
 .panel__in { padding-top: 24px; padding-bottom: 28px; }
@@ -204,6 +208,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .idx__year:first-child { margin-top: 12px; }
 .idx__row > a { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 20px; align-items: start; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .idx__date { padding-top: 4px; font: 500 14px var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* Tistory prints only the time ("14:48:21") for posts from today; script.js shows "오늘" */
+.idx__date.is-today { font-family: var(--font); font-weight: 700; color: var(--accent); }
 .idx__main { min-width: 0; }
 .idx__title { display: block; font-size: 18px; font-weight: 600; line-height: 1.5; letter-spacing: -.01em; }
 .idx__title img { display: none; }
@@ -402,9 +408,58 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .author__links .author__ask { color: var(--accent); font-weight: 650; text-decoration: none; }
 .author[hidden] { display: none; }
 /* Merged with Tistory's namecard (script.js): the link row sits under the namecard text, aligned past the avatar */
-.author__links--merged { margin: 0 0 32px; padding: 0 0 20px 72px; border-bottom: 1px solid var(--line); }
+.author__links--merged { margin: -6px 0 32px; padding: 0 0 20px 25px; border-bottom: 1px solid var(--line); }
 .comments { margin-top: 32px; }
 .author[hidden] + .comments { margin-top: 48px; }
+
+/* Comments and guestbook: Tistory's comment app and namecard, themed with the skin tokens.
+   Tistory ships light-only colors (its #222 text sits on the dark theme at 1.12:1), 15px/1.5 text and
+   word-break: break-all, which splits Hangul words. Same elements in the same order; only color, type and spacing change. */
+.comments .tt-comment-cont { color: var(--ink); font-family: var(--font); }
+.comments .tt-box-total { padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.comments .tt-box-total .tt_txt_g { font: 750 17px/1.5 var(--font); color: var(--ink); }
+.comments .tt-box-total .tt_num_g { padding-left: 6px; font: 600 15px/1.5 var(--font); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.comments .tt-list-reply { border-bottom: 1px solid var(--line); }
+.comments .tt-item-reply { padding: 22px 0 20px; border-top: 1px solid var(--line); }
+.comments .tt-item-reply .tt-list-reply-comment { border-top: 1px solid var(--line); }
+.comments .tt-list-reply-comment .tt-item-reply { padding-left: 60px; }
+.comments .tt-list-reply-comment .tt-item-reply::before { border-color: var(--ink-3); opacity: .5; }
+@media (max-width: 599.98px) { .comments .tt-list-reply-comment .tt-item-reply { padding-left: 40px; } .comments .tt-list-reply-comment .tt-item-reply::before { left: 20px; } }
+.comments .tt-wrap-cmt .tt-link-user { font: 650 15px/1.5 var(--font); color: var(--ink); }
+.comments .tt-wrap-cmt .tt_desc { margin-top: 2px; font-size: 16px; line-height: 1.75; color: var(--ink); word-break: keep-all; overflow-wrap: anywhere; }
+.comments .tt-wrap-cmt .tt_desc a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.comments .tt-wrap-cmt .tt-wrap-desc .tt_emph { color: var(--risk); }
+.comments .tt_desc_more { color: var(--ink); }
+.comments .tt_item_modify .tt_desc, .comments .tt_item_secret > .tt-wrap-cmt .tt_desc { color: var(--ink-3); }
+.comments .tt-wrap-cmt .tt_date { padding-top: 10px; font: 12px/1.5 var(--mono); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.comments .tt-wrap-info .tt_date + .tt-wrap-link-comment::before { background-color: var(--ink-3); }
+.comments .tt-link-comment .tt_txt_g { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.comments .tt-link-comment:hover .tt_txt_g { color: var(--accent); }
+.comments .tt-wrap-cmt .tt-button-modify:hover, .comments .tt-wrap-cmt .tt-box-modify.tt-box-modify-open .tt-button-modify { background-color: var(--soft); }
+.comments .tt-wrap-cmt .tt-list-modify, .comments .tt-wrap-cmt .tt_box_pwd { background: var(--bg); border-radius: 10px; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(15, 23, 42, .16); }
+.comments .tt-wrap-cmt .tt-list-modify a { color: var(--ink); }
+.comments .tt-wrap-cmt .tt-list-modify a:hover { background-color: var(--soft); }
+.comments .tt-area-write .tt-box-account input, .comments .tt-box-textarea .tt-inner-g, .comments .tt_box_pwd .tt_inp_g {
+  border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font-family: var(--font);
+}
+.comments .tt-area-write .tt-box-account input::placeholder, .comments .tt_box_pwd .tt_inp_g::placeholder { color: var(--ink-3); }
+.comments .tt-box-textarea .tt-cmt { font-size: 15px; line-height: 1.7; color: var(--ink); }
+.comments .tt-box-textarea .tt-cmt[contenteditable=true]:empty::before { color: var(--ink-3); }
+.comments .tt-area-write .tt-box-account input:hover, .comments .tt-box-textarea:hover .tt-inner-g { border-color: var(--ink-3); }
+.comments .tt-area-write .tt-box-account input:focus, .comments .tt-box-textarea.tt-input-textarea .tt-inner-g { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.comments .tt-btn_register { width: auto; min-width: 68px; height: 36px; padding: 0 16px; border: 1px solid var(--ink); border-radius: 8px; background: var(--ink); color: var(--bg); font: 700 14px var(--font); }
+.comments .tt-btn_register:focus { background: var(--ink); border-color: var(--ink); }
+.comments .tt-btn_register:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.comments .tt-btn_register:disabled { background: var(--soft); border-color: var(--line); color: var(--ink-3); }
+.comments .tt_box_namecard { min-height: 0; border: 1px solid var(--line); border-radius: 12px; background-color: var(--soft); }
+.comments .tt_box_namecard .tt_cont { padding: 24px 0 0 24px; }
+.comments .tt_box_namecard .tt_tit_cont { font: 750 17px/1.5 var(--font); color: var(--ink); }
+.comments .tt_box_namecard .tt_desc { padding-top: 4px; font-size: 14px; line-height: 1.65; color: var(--ink-2); word-break: keep-all; overflow-wrap: anywhere; }
+.comments .tt_box_namecard .tt_btn_subscribe { height: 36px; margin: 14px 0 24px; border: 1px solid var(--ink-3); background: var(--bg); }
+.comments .tt_box_namecard .tt_btn_subscribe .tt_txt_g { font-weight: 600; color: var(--ink); }
+.comments .tt_box_namecard .tt_wrap_thumb { margin: 24px 24px 0 16px; border-radius: 10px; }
+/* Tistory's sprite icons (more, check, plus) are dark gray; flipped so they stay visible on the dark theme */
+:root[data-theme="dark"] .comments .tt_img_area_reply { filter: invert(.85); }
 .protected { margin-top: 32px; padding: 32px; border: 1px solid var(--line); border-radius: 12px; }
 .protected p { margin: 0 0 14px; color: var(--ink-2); }
 .protected__row { display: flex; gap: 8px; max-width: 360px; }
@@ -509,7 +564,11 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .post #article-view .another_category tr:first-child > th { padding: 12px 0 !important; border: 0 !important; border-bottom: 1px solid var(--line) !important; background: none !important; text-align: left !important; vertical-align: top; font-size: 15px !important; font-weight: 500 !important; color: var(--ink) !important; }
 .post #article-view .another_category th a { color: var(--ink) !important; text-decoration: none !important; font-weight: 600; }
 .post #article-view .another_category th a:hover { color: var(--accent) !important; }
-.post #article-view .another_category th .series { font-size: 12px; margin-bottom: 1px; }
+/* Tistory adds ".another_category th span { font-size: 10px }" and ".another_category_color_gray * { color: #909090 !important }"
+   at runtime; both hit the series label and title spans the skin creates, so those get explicit sizes and colors. */
+.post #article-view .another_category th .series { font-size: 12px; margin-bottom: 1px; color: var(--ink-3) !important; }
+.post #article-view .another_category th .series-main { display: block; font-size: 15px; color: var(--ink) !important; }
+.post #article-view .another_category th a:hover .series-main { color: var(--accent) !important; }
 .post #article-view .another_category th span:not(.series):not(.series-main) { font-size: 12px !important; color: var(--ink-3) !important; }
 .post #article-view .another_category td { width: 104px; padding-left: 16px !important; text-align: right !important; white-space: nowrap; font: 12px var(--mono) !important; color: var(--ink-3) !important; }
 

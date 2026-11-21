@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { site, pages, injectedHead } from './sample.mjs';
+import { site, pages, injectedHead, injectedBody } from './sample.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'dev', 'out');
@@ -77,7 +77,7 @@ for (const [file, page] of Object.entries(pages)) {
   const pathHook = page.path ? `\n<script>window.__SKIN_PATH__ = ${JSON.stringify(page.path)};</script>` : '';
   // The blog's /search/<words> page is stood in for by the rendered search-mock page (needs `npm run dev`, not file://)
   const searchHook = `\n<script>window.__SKIN_SEARCH__ = '/search-mock.html?q=';</script>`;
-  html = html.replace('<head>', `<head>\n${injectedHead}${pathHook}${searchHook}`);
+  html = html.replace('<head>', `<head>\n${injectedHead}${pathHook}${searchHook}`).replace('</body>', `${injectedBody}\n</body>`);
   // Sample images are data: URIs; Tistory's thumbnail resizer can't fetch those, so unwrap them locally.
   html = html.replace(/\/\/i1\.daumcdn\.net\/thumb\/[^"?]+\/\?fname=(data:)/g, '$1');
   writeFileSync(join(OUT, `${file}.html`), html);

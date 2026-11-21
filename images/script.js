@@ -18,6 +18,12 @@
     var m = (s || '').match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})/);
     return m ? [m[1], ('0' + m[2]).slice(-2), ('0' + m[3]).slice(-2)] : null;
   }
+  // Tistory prints only the time ("14:48:21") for a post written today.
+  var TIME_ONLY = /^\s*\d{1,2}:\d{2}(:\d{2})?\s*$/;
+  function todayYmd() {
+    var n = new Date();
+    return [String(n.getFullYear()), ('0' + (n.getMonth() + 1)).slice(-2), ('0' + n.getDate()).slice(-2)];
+  }
 
   /* ---------- Theme ---------- */
   function initTheme() {
@@ -234,11 +240,16 @@
     var rows = $$('.idx__row[data-date]');
     var lastYear = null, lastList = null;
     rows.forEach(function (row) {
-      var d = ymd(row.getAttribute('data-date'));
+      var raw = row.getAttribute('data-date'), d = ymd(raw), today = !d && TIME_ONLY.test(raw || '');
+      if (today) d = todayYmd();
       if (!d) return;
       var list = row.parentNode;
       var t = $('.idx__date', row);
-      if (t) { t.textContent = d[1] + '.' + d[2]; t.setAttribute('datetime', d.join('-')); }
+      if (t) {
+        t.textContent = today ? '오늘' : d[1] + '.' + d[2];
+        t.setAttribute('datetime', d.join('-'));
+        if (today) t.classList.add('is-today');
+      }
       // Each cover/list starts its own year run; index_article_rep renders one <ul> per post, so those share one run.
       if (list !== lastList && !list.classList.contains('idx--loose')) lastYear = null;
       if (d[0] !== lastYear) {
@@ -251,6 +262,35 @@
       }
       lastList = list;
     });
+    // Other dates that can come through as a bare time: prev/next, related posts, covers.
+    $$('.post-nav__date, .related__date, .gallery__date').forEach(function (el) {
+      if (TIME_ONLY.test(el.textContent)) el.textContent = '오늘';
+    });
+    $$('.feat__date').forEach(function (el) {
+      el.textContent = el.textContent.replace(/^\s*\d{1,2}:\d{2}(:\d{2})?/, '오늘');
+    });
+  }
+
+  /* ---------- Tistory's fixed toolbar ----------
+     On desktop Tistory pins a "구독하기" toolbar (.menu_toolbar, z-index 9999) to the top-right corner, over the
+     header's search and theme buttons. The header keeps the toolbar's width free; the toolbar is left as it is. */
+  function initToolbarGap() {
+    var head = $('.site-header__in');
+    if (!head) return;
+    function fit() {
+      var bar = $('.menu_toolbar'), gap = 0;
+      if (bar) {
+        var b = bar.getBoundingClientRect(), h = head.getBoundingClientRect();
+        if (b.width && b.height && b.bottom > h.top && b.top < h.bottom && b.left < h.right) gap = Math.ceil(h.right - b.left) + 16;
+      }
+      var natural = parseFloat(getComputedStyle(head).paddingLeft) || 0; // the gutter on the other side
+      head.classList.toggle('has-toolbar-gap', gap > natural);
+      head.style.setProperty('--toolbar-gap', gap + 'px');
+    }
+    fit();
+    var queued = false;
+    window.addEventListener('resize', function () { if (!queued) { queued = true; requestAnimationFrame(function () { queued = false; fit(); }); } });
+    window.addEventListener('load', fit);
   }
 
   /* ---------- Markdown pasted into the basic editor ----------
@@ -541,13 +581,28 @@
       }
       if (sheet) {
         var r = content.getBoundingClientRect();
-        sheet.show(r.top < 0 && r.bottom > innerHeight * 0.5);
+        sheet.show(r.top < 0 && r.bottom > innerHeight * 0.5 && !overAvoided());
       }
       ticking = false;
     }
     addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(mark); } }, { passive: true });
     mark();
   }
+  /* The floating button steps aside while an ad or Tistory's reaction row passes under it: Tistory's policy is
+     that nothing covers its ads, and the reaction row is how readers answer a post. */
+  var AVOID = '.revenue_unit_wrap, ins.adsbygoogle, iframe[id^="aswift"], .container_postbtn';
+  var avoidEls = [], avoidAt = 0;
+  function overAvoided() {
+    var now = Date.now();
+    if (now - avoidAt > 1500) { avoidEls = $$(AVOID); avoidAt = now; } // ads can be inserted late
+    var band = innerHeight - 96; // the button: 44px tall, 16px above the bottom edge, plus air
+    for (var i = 0; i < avoidEls.length; i++) {
+      var r = avoidEls[i].getBoundingClientRect();
+      if (r.height > 0 && r.bottom > band && r.top < innerHeight) return true;
+    }
+    return false;
+  }
+
   /* Phones/tablets: floating "current section" button that opens the contents as a bottom sheet. */
   function initSheet(list) {
     var fab = $('.toc-fab'), sheet = $('#toc-sheet');
@@ -559,12 +614,21 @@
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       doc.body.classList.toggle('sheet-open', open);
       if (open) { lastFocus = doc.activeElement; var a = $('.toc a.is-active', sheet) || $('.toc a', sheet); if (a) a.focus(); }
-      else if (lastFocus) lastFocus.focus();
+      else (lastFocus && lastFocus !== doc.body && lastFocus.focus ? lastFocus : btn).focus();
     }
     btn.addEventListener('click', function () { setOpen(true); });
     $$('.js-sheet-close', sheet).forEach(function (el) { el.addEventListener('click', function () { setOpen(false); }); });
     $$('a', sheet).forEach(function (a) { a.addEventListener('click', function () { setOpen(false); }); });
-    sheet.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    sheet.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { setOpen(false); return; }
+      if (e.key !== 'Tab') return;
+      // aria-modal: Tab stays inside the sheet
+      var f = $$('a[href], button:not([disabled])', sheet).filter(function (el) { return el.getClientRects().length; });
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     return {
       label: function (t) { label.textContent = t; $$('.toc a', sheet).forEach(function (l) { l.classList.toggle('is-active', l.textContent.trim() === t); }); },
       show: function (on) { if (fab.hidden === on) fab.hidden = !on; }
@@ -744,6 +808,7 @@
   function init() {
     initTheme();
     initHeader();
+    initToolbarGap();
     initHero();
     prepTistoryBlocks();
     initSeries();

@@ -10,7 +10,26 @@ export const injectedHead = [
   `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/styles/atom-one-light.min.css">`,
   `<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.3/highlight.min.js"></script>`,
   `<script>document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('pre code').forEach(function(b){hljs.highlightBlock(b)})})</script>`,
+  // Added by Tistory at runtime on the live blog (seen with CSS.getMatchedStylesForNode on post 512, 2026-11-21);
+  // not in the downloadable content.css, so it is mirrored here.
+  `<style>.another_category th span{font-size:10px}.another_category_color_gray *{color:#909090!important}</style>`,
+  // Tistory's comment / namecard app styles (light colors only; the skin themes them)
+  `<link rel="stylesheet" href="https://edge.daumcdn.net/tistory/tistory-admin/userblog/userblog-5098e284103a8269f7a792ac75b430e335544fd8/static/pc/dist/index.css">`,
 ].join('\n');
+
+// What Tistory appends to <body> on desktop: the fixed 구독하기 toolbar (measured on the live blog at 1440px:
+// 169x30 at top 20, right 35, z-index 9999). Its real styles live in Tistory's CSS; this mirrors the box.
+export const injectedBody = `<div class="#menubar menu_toolbar" style="position:fixed;top:20px;right:35px;z-index:9999;display:flex;align-items:center;gap:8px;height:30px;padding:0 14px;border:1px solid #ddd;border-radius:16px;background:#fff;font:13px sans-serif;color:#222;box-sizing:border-box;width:169px"><h2 class="screen_out">티스토리툴바</h2><span style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#666">샘플 블로그 이름</span><strong style="white-space:nowrap">구독하기</strong></div>
+<style>@media (max-width: 767px) { .menu_toolbar { display: none !important; } }</style>`;
+
+// What [##_comment_group_##] renders on the live blog (structure captured from a live post on 2026-11-21;
+// names, text and pictures replaced with samples): Tistory's namecard, then the comment app.
+const avatar = 'https://img1.daumcdn.net/thumb/C44x44@2x.fwebp.q85/?fname=https%3A%2F%2Ft1.daumcdn.net%2Ftistory_admin%2Fstatic%2Fmanage%2Fimages%2Fr3%2Fdefault_S.png';
+const cmtItem = (name, text, date, reply = '') => `<li class="tt-item-reply${reply ? ' rp_general' : ''}"><div class="tt-wrap-cmt"><div class="tt-box-thumb"><a><span class="tt-thumbnail" style="background-image: url(&quot;${avatar}&quot;);"></span></a></div><div class="tt-box-content"><div class="tt-box-meta"><a class="tt-link-user" rel="noreferrer" target="_blank">${name}</a></div><div class="tt-wrap-desc"><p class="tt_desc">${text}</p></div><div class="tt-wrap-info"><span class="tt_date">${date}</span><span class="tt-wrap-link-comment"><a class="tt-link-comment" href="#"><span class="tt_txt_g">답글</span></a></span></div><div class="tt-box-modify"><button class="tt_img_area_reply tt-button-modify" type="button">더보기</button><ul class="tt-list-modify"><li><a href="#">신고</a></li><li><a href="#">링크복사</a></li></ul></div></div></div>${reply}</li>`;
+export const commentGroup = `<div data-tistory-react-app="Namecard"><div class="tt_box_namecard"><div class="tt_cont"><a class="tt_tit_cont" href="#">샘플 블로그 이름</a><a class="tt_desc" href="#">블로그 설명이 들어가는 자리입니다. 티스토리 명함은 블로그 설명 전체를 보여 주므로 여러 줄이 될 수 있습니다. 질문은 댓글로 남겨 주세요.</a><button class="tt_btn_subscribe" type="button"><span class="tt_txt_g">구독하기</span><span class="tt_img_area_reply tt_ico_cross"></span></button></div><a class="tt_wrap_thumb" href="#"><span class="tt_thumb_g" style="background-image: url(&quot;${avatar}&quot;);"></span></a></div></div>
+<div id="entry512Comment"><div data-tistory-react-app="Comment"><div class="tt-comment-cont"><div class="tt-box-total"><span class="tt_txt_g">댓글</span><span class="tt_num_g">2</span></div><div class="tt-area-reply"><ul class="tt-list-reply">${cmtItem('방문자1',
+  '샘플 댓글입니다. 실제 블로그의 긴 댓글처럼 여러 문장이 이어지는 경우를 확인하기 위해 문장을 길게 씁니다. 글에서 데이터 흐름을 한 줄로 묶어 정리한 부분이 특히 도움이 됐습니다. 파이프라인을 수집·저장·스키마·조회 네 칸으로 나눠 두면 나중에 어느 칸이 병목인지 찾을 때 시간이 줄어듭니다.<br><br>두 번째 문단입니다. 링크가 들어간 댓글도 있습니다: https://example.com/sample',
+  '2026. 11. 14. 19:35', `<ul class="tt-list-reply-comment">${cmtItem('샘플 필명', '답글 샘플입니다. 짧은 답글도 읽기 편해야 합니다.', '2026. 11. 15. 05:27')}</ul>`)}</ul></div><form style="margin: 0px;"><div class="tt-area-write"><div class="tt-box-thumb"><span class="tt-thumbnail" style="background-image: url(&quot;${avatar}&quot;);"></span></div><div class="tt_wrap_write"><div class="tt-box-account"><input maxlength="32" placeholder="이름" title="이름" type="text" value=""><input maxlength="12" placeholder="비밀번호" title="비밀번호" type="password" value=""></div><div class="tt-box-textarea"><div class="tt-inner-g"><div class="tt-cmt" contenteditable="true" data-placeholder="내용을 입력하세요."></div></div></div><div class="tt-box-write"><label class="tt-xe-label"><input id="secret" type="checkbox"><span class="tt_img_area_reply tt-xe-input-helper"></span><span class="tt-xe-label-text">비밀글</span></label><button type="submit" class="tt-btn_register" disabled="">등록</button></div></div></div></form></div></div></div>`;
 
 const img = (w, h, hue) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue},35%,62%)"/><stop offset="1" stop-color="hsl(${hue + 40},30%,38%)"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><circle cx="${w * 0.72}" cy="${h * 0.32}" r="${h * 0.12}" fill="rgba(255,255,255,.55)"/><path d="M0 ${h} L${w * 0.35} ${h * 0.55} L${w * 0.6} ${h * 0.8} L${w * 0.8} ${h * 0.6} L${w} ${h} Z" fill="rgba(0,0,0,.18)"/></svg>`)}`;
@@ -56,6 +75,8 @@ const coverItems = titles.map((t, i) => ({
   cover_item_category: ['개발/Cloud · DevOps', '개발/Backend', '일상', '취미/게임', '어학/일본어', '개발/Backend'][i], cover_item_category_url: '#',
   cover_item_date: `${DATES[i]} 19:30`, cover_item_simple_date: DATES[i], cover_item_comment_count: i * 2,
 }));
+// Tistory prints only the time for a post written today (seen on the live home): the first row reproduces it.
+coverItems[0].cover_item_simple_date = '14:48:21';
 
 const articleBody = `<div class="tt_article_useless_p_margin contents_style">
 <p data-ke-size="size16">샘플 본문입니다. 이 미리보기는 스킨이 티스토리 에디터 출력물을 어떻게 보여주는지 확인하기 위한 가짜 글입니다. 문단, 소제목, 목록, 인용, 코드, 표, 이미지가 모두 들어 있습니다. 한글 문장은 <code>word-break: keep-all</code>로 어절 단위로 줄바꿈되고, 아주 긴 영문 토큰 <code>org.springframework.boot.autoconfigure.SpringBootApplication</code>은 칸을 넘지 않아야 합니다.</p>
@@ -152,7 +173,7 @@ const article = (extra = {}) => ({
   article_next: { article_next_link: '#', article_next_title: titles[2], article_next_date: '2026.11.19' },
   article_related: { article_related_rep: titles.slice(1, 5).map((t, i) => ({ article_related_rep_link: '#', article_related_rep_title: t, article_related_rep_date: date(16 - i), article_related_rep_thumbnail: i === 1 ? '' : img(320, 240, 100 + i * 40), article_related_rep_thumbnail_link: img(320, 240, 100 + i * 40) })) },
   rp: true,
-  comment_group: '<div class="tt-comments-wrap" style="padding:28px;border:1px dashed var(--line-strong);border-radius:14px;color:var(--ink-3);text-align:center">티스토리 댓글 영역 (실제 블로그에서는 티스토리가 렌더링)</div>',
+  comment_group: commentGroup,
   ...extra,
 });
 
