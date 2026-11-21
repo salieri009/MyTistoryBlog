@@ -235,12 +235,7 @@
               <div class="post__tags"><h2 class="sr-only">태그</h2><div class="tags">[##_tag_label_rep_##]</div></div>
             </s_tag_label>
 
-            <!-- Series: other posts whose title shares the "시리즈 N일차 ::" label (filled by script.js from the blog's own search page) -->
-            <section class="series-nav" id="series" aria-labelledby="series-title" hidden>
-              <h2 class="series-nav__title" id="series-title"></h2>
-              <ol class="series-nav__list"></ol>
-            </section>
-
+            <!-- Next step first: Tistory's prev/next, which script.js turns into 이전 편 / 다음 편 for a series -->
             <nav class="post-nav" aria-label="이어서 읽기">
               <s_article_prev>
                 <a class="post-nav__item" href="[##_article_prev_link_##]">
@@ -257,6 +252,12 @@
                 </a>
               </s_article_next>
             </nav>
+
+            <!-- Series: other posts whose title shares the "시리즈 N일차 ::" label (filled by script.js from the blog's own search page) -->
+            <section class="series-nav" id="series" aria-labelledby="series-title" hidden>
+              <h2 class="series-nav__title" id="series-title"></h2>
+              <ol class="series-nav__list"></ol>
+            </section>
 
             <s_article_related>
               <section class="related">
@@ -405,6 +406,7 @@
         <div class="toc-rail__inner">
           <p class="toc-rail__title">목차</p>
           <nav class="toc" aria-label="이 글의 목차"></nav>
+          <div class="next-read" hidden></div>
           <a class="toc-rail__top" href="#main">맨 위로</a>
         </div>
       </div>
@@ -506,6 +508,7 @@
         <button type="button" class="icon-btn js-sheet-close" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <nav class="toc" aria-label="이 글의 목차"></nav>
+      <div class="next-read" hidden></div>
       <a class="toc-sheet__top" href="#main">맨 위로</a>
     </div>
   </div>

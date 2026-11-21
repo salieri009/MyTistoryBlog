@@ -287,6 +287,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .post__title .series { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
 .post__title .series--link { width: fit-content; }
 .post__title .series--link:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; }
+.series__pos { font-weight: 500; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.series__pos::before { content: "·"; margin: 0 8px; }
 .post__meta { display: flex; flex-wrap: wrap; gap: 4px 0; margin-top: 16px; font-size: 14px; color: var(--ink-3); }
 .post__meta > *:not([hidden]) + *:not([hidden])::before { content: "·"; margin: 0 8px; }
 .post__meta a:hover { color: var(--ink); }
@@ -312,13 +314,32 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .toc-rail { display: none; }
 @media (min-width: 1080px) {
   .toc-rail:not([hidden]) { display: block; height: calc(100% - var(--toc-top, 0px)); margin-top: var(--toc-top, 0px); }
-  .toc-rail__inner { position: sticky; top: 32px; max-height: calc(100vh - 64px); overflow-y: auto; padding-bottom: 8px; }
+  /* Long outlines scroll inside the rail; the next-read link and "맨 위로" stay pinned below them */
+  .toc-rail__inner { position: sticky; top: 32px; display: flex; flex-direction: column; max-height: calc(100vh - 64px); padding-bottom: 8px; }
+  .toc-rail .toc { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .toc-rail__title, .toc-rail .next-read, .toc-rail__top { flex: none; }
+  .toc-rail--next-only .toc-rail__title, .toc-rail--next-only .toc { display: none; }
+  .toc-rail--next-only .next-read { margin-top: 0; padding-top: 0; border-top: 0; }
   .toc-rail__title { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink-3); letter-spacing: .04em; }
   .toc-rail__top { display: inline-block; margin-top: 16px; font-size: 13px; color: var(--ink-3); }
   .toc-rail__top:hover { color: var(--accent); }
   .has-toc .toc-inline { display: none; }
 }
 .toc-off .toc-inline, .toc-off .toc-rail, .toc-off .toc-fab { display: none !important; }
+
+/* Next read (script.js initNextRead): one link to the next step under the outline, in the rail and the phone sheet.
+   Series next episode, else Tistory's next post, else the first same-category post. The rail reveals it after 60% of the
+   post; its space is reserved from the start so the outline above never jumps. */
+.next-read[hidden] { display: none; }
+.next-read { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--line); }
+.next-read__link { display: block; }
+.next-read__label { display: block; font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.next-read__title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; font-size: 14px; font-weight: 650; line-height: 1.5; color: var(--ink); }
+.next-read__link:hover .next-read__title { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.toc-rail .next-read { visibility: hidden; opacity: 0; transform: translateY(4px); transition: opacity .2s var(--ease), transform .2s var(--ease), visibility 0s .2s; }
+.toc-rail .next-read.is-ready { visibility: visible; opacity: 1; transform: none; transition: opacity .2s var(--ease), transform .2s var(--ease), visibility 0s; }
+.toc-sheet .next-read { margin-top: 8px; padding-top: 12px; border-top: 0; }
+.toc-sheet .next-read__title { font-size: 15px; }
 
 /* Phones/tablets: current-section button + contents sheet */
 .toc-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 50; }
@@ -359,6 +380,8 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 .post-nav__item--next { grid-column: 2; padding: 20px 0 20px 20px; text-align: right; border-left: 1px solid var(--line); }
 .post-nav__label { font-size: 12px; font-weight: 700; color: var(--ink-3); }
 .post-nav__item--next .post-nav__label { color: var(--accent); }
+/* In a series, prev/next point to the neighbouring episodes (script.js); the label carries the episode */
+.post-nav__item--series .post-nav__label { font-variant-numeric: tabular-nums; }
 .post-nav__title { font-size: 16px; font-weight: 650; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .post-nav__item:hover .post-nav__title { color: var(--accent); }
 .post-nav__date { font: 12px var(--mono); color: var(--ink-3); }
@@ -548,6 +571,16 @@ a.series-nav__link:hover .series-nav__main { color: var(--accent); text-decorati
 .post #article-view .hljs-attr, .post #article-view .hljs-attribute, .post #article-view .hljs-variable, .post #article-view .hljs-template-variable, .post #article-view .hljs-params { color: #CBD5E1 !important; }
 .post #article-view .hljs-tag, .post #article-view .hljs-name, .post #article-view .hljs-selector-id, .post #article-view .hljs-selector-class { color: #FCA5A5 !important; }
 .post #article-view .hljs-meta, .post #article-view .hljs-deletion { color: #FCA5A5 !important; }
+
+/* Tistory's reaction row (공감 · 공유 · 구독 · 후원), appended inside the body: same buttons and order,
+   skin colors. Its sprite icons are dark gray, so they are flipped on the dark theme. */
+.post #article-view .container_postbtn .postbtn_like, .post #article-view .container_postbtn .btn_menu_toolbar { border-color: color-mix(in srgb, var(--ink-3) 45%, transparent); }
+.post #article-view .container_postbtn .postbtn_like:hover, .post #article-view .container_postbtn .btn_menu_toolbar:hover { border-color: var(--ink-3); }
+.post #article-view .container_postbtn .txt_like, .post #article-view .container_postbtn .txt_state, .post #article-view .container_postbtn a { color: var(--ink-2); }
+.post #article-view .container_postbtn .postbtn_like .ico_bar { background-color: var(--line); }
+.layer_post { background: var(--bg) !important; box-shadow: 0 0 0 1px var(--line), 0 8px 24px rgba(15, 23, 42, .16) !important; }
+.layer_post .btn_mark, .layer_post a, .layer_post button { color: var(--ink) !important; }
+:root[data-theme="dark"] .post #article-view .container_postbtn [class*="ico_"], :root[data-theme="dark"] .layer_post [class*="ico_"] { filter: invert(.85); }
 
 /* Misc editor blocks */
 .post #article-view div[data-ke-type="moreLess"] { margin: 1.6em 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; }

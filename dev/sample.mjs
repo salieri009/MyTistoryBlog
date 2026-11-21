@@ -13,7 +13,8 @@ export const injectedHead = [
   // Added by Tistory at runtime on the live blog (seen with CSS.getMatchedStylesForNode on post 512, 2026-11-21);
   // not in the downloadable content.css, so it is mirrored here.
   `<style>.another_category th span{font-size:10px}.another_category_color_gray *{color:#909090!important}</style>`,
-  // Tistory's comment / namecard app styles (light colors only; the skin themes them)
+  // Tistory's reaction-row styles and its comment / namecard app styles (light colors only; the skin themes them)
+  `<link rel="stylesheet" href="https://edge.daumcdn.net/tistory/tistory-admin/userblog/userblog-5098e284103a8269f7a792ac75b430e335544fd8/static/style/postBtn.css">`,
   `<link rel="stylesheet" href="https://edge.daumcdn.net/tistory/tistory-admin/userblog/userblog-5098e284103a8269f7a792ac75b430e335544fd8/static/pc/dist/index.css">`,
 ].join('\n');
 
@@ -131,8 +132,9 @@ const longCode = `<pre class="java" data-ke-language="java"><code>${Array.from({
 
 const sidebar = {
   sidebar: true, sidebar_element: true, search: true,
-  rctps_rep: titles.slice(0, 5).map((t, i) => ({ rctps_rep_link: '#', rctps_rep_title: t, rctps_rep_simple_date: date(18 - i) })),
-  rctps_popular_rep: titles.slice(1, 6).map((t, i) => ({ rctps_rep_link: '#', rctps_rep_title: t, rctps_rep_category: ['개발', '취미', '일상', '어학', '개발'][i] })),
+  // A few real paths so the post footer's de-duplication shows: /post.html is the sample post, /entry/501 is its series' 2일차.
+  rctps_rep: titles.slice(0, 5).map((t, i) => ({ rctps_rep_link: ['/post.html', '/entry/501', '#', '#', '#'][i], rctps_rep_title: t, rctps_rep_simple_date: date(18 - i) })),
+  rctps_popular_rep: titles.slice(1, 6).map((t, i) => ({ rctps_rep_link: ['/entry/501', '#', '#', '#', '#'][i], rctps_rep_title: t, rctps_rep_category: ['개발', '취미', '일상', '어학', '개발'][i] })),
   rctrp_rep: [1, 2, 3].map((i) => ({ rctrp_rep_link: '#', rctrp_rep_desc: `샘플 댓글 ${i}: 잘 읽었습니다. 궁금한 점이 하나 있어요.`, rctrp_rep_name: `방문자${i}`, rctrp_rep_time: `11.${18 - i}` })),
   rct_notice: { rct_notice_rep: [{ notice_rep_link: '#', notice_rep_title: '샘플 공지사항' }] },
   archive_rep: ['2026/11', '2026/10', '2026/09'].map((d, i) => ({ archive_rep_link: '#', archive_rep_date: d, archive_rep_count: [12, 18, 9][i] })),
@@ -157,7 +159,9 @@ export const site = {
 
 // What Tistory appends inside the body on the live blog: reaction/share buttons, then
 // "'부모 > 자식' 카테고리의 다른 글" (a Tistory feature, so the skin styles it but never hides it).
-const tistoryTail = `<div class="container_postbtn #post_button_group" style="padding:14px 0;color:var(--ink-3);font-size:13px">[티스토리 공감 · 공유 버튼 자리]</div>
+// The reaction row as rendered on the live blog (captured 2026-11-21, data attributes and script trimmed).
+const postBtn = `<div class="container_postbtn #post_button_group"> <div class="postbtn_like"><div class="wrap_btn" id="reaction-512" data-tistory-react-app="Reaction"><button class="btn_post uoc-icon"><div class="uoc-icon"><span class="ico_postbtn ico_like">좋아요</span><span class="txt_like uoc-count">공감</span></div></button></div><div class="wrap_btn wrap_btn_share"><button type="button" class="btn_post sns_btn btn_share" aria-expanded="false"><span class="ico_postbtn ico_share">공유하기</span></button> <div class="layer_post" id="tistorySnsLayer"></div> </div><div class="wrap_btn wrap_btn_etc"><button type="button" class="btn_post btn_etc2" aria-expanded="false"><span class="ico_postbtn ico_etc">게시글 관리</span></button> <div class="layer_post" id="tistoryEtcLayer"></div> </div></div> <button type="button" class="btn_menu_toolbar btn_subscription #subscribe"><em class="txt_state">구독하기</em><strong class="txt_tool_id">샘플 블로그 이름</strong><span class="img_common_tistory ico_check_type1"></span></button> <div data-tistory-react-app="SupportButton"></div> </div>`;
+const tistoryTail = `${postBtn}
 <div class="another_category another_category_color_gray">
   <h4>'<a href="/category/개발">개발</a> &gt; <a href="/category/개발/Cloud · DevOps">Cloud · DevOps</a>' 카테고리의 다른 글</h4>
   <table>${titles.slice(1, 6).map((t, i) => `<tr><th><a href="#">${t}</a>&nbsp;&nbsp;<span>(${i % 3})</span></th><td>${DATES[i + 1]}</td></tr>`).join('')}</table>
@@ -238,6 +242,14 @@ pages['post-md'] = { body_id: 'tt-body-page', article_rep: [article({ article_re
 
 // Home with an intro sentence filled in (the default ships empty).
 pages['home-hero'] = { ...pages.home, vars: { heroText: '소개 문장 자리입니다. *강조*할 단어는 별표로 감쌉니다.', heroSub: '한 줄 소개 자리' } };
+
+// A short diary post: no outline, not a series. The rail holds only the next-read link.
+pages['post-short'] = { body_id: 'tt-body-page', article_rep: [article({
+  article_rep_title: titles[2], article_rep_category: '일상', article_rep_category_link: '/category/일상',
+  article_rep_desc: `<div class="tt_article_useless_p_margin contents_style"><p data-ke-size="size16">${summary}</p><p data-ke-size="size16">${summary} ${summary}</p><p data-ke-size="size16">${summary}</p></div>` + postBtn,
+  article_next: { article_next_link: '/entry/600', article_next_title: titles[3], article_next_date: '2026.11.19' },
+  article_related: false,
+})] };
 
 // Stand-in for the blog's own /search/<words> page. script.js fetches it (window.__SKIN_SEARCH__, set by render.mjs)
 // for the series list at the end of a post and for the header search preview. The local server ignores the query,

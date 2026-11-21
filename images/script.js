@@ -18,6 +18,10 @@
     var m = (s || '').match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})/);
     return m ? [m[1], ('0' + m[2]).slice(-2), ('0' + m[3]).slice(-2)] : null;
   }
+  // "/512/" or "https://blog/512" -> "/512" (for comparing links to posts)
+  function pathOf(h) {
+    try { return new URL(h, location.href).pathname.replace(/\/+$/, ''); } catch (e) { return h; }
+  }
   // Tistory prints only the time ("14:48:21") for a post written today.
   var TIME_ONLY = /^\s*\d{1,2}:\d{2}(:\d{2})?\s*$/;
   function todayYmd() {
@@ -542,6 +546,14 @@
       return h.textContent.replace(/\s| /g, '').length && !h.closest('.another_category, figure, blockquote');
     }).map(function (h) { if (!h.id) h.id = slug(h.textContent, used); return h; });
   }
+  /* The rail starts where the post body starts (its column runs the full height, the inner part is sticky). */
+  function placeRail(rail, content) {
+    var place = function () {
+      var page = $('.page');
+      if (page) rail.style.setProperty('--toc-top', (content.getBoundingClientRect().top - page.getBoundingClientRect().top) + 'px');
+    };
+    place(); window.addEventListener('resize', place); window.addEventListener('load', place);
+  }
   function initToc(content, heads) {
     if (doc.body.classList.contains('toc-off') || heads.length < 2) return;
     // Labels are read once: section links get appended to the headings afterwards.
@@ -559,16 +571,21 @@
     });
     var inline = $('.toc-inline'), rail = $('.toc-rail');
     if (inline) { $('.toc', inline).appendChild(list.cloneNode(true)); inline.hidden = false; }
+    var railToc = rail && $('.toc', rail);
     if (rail) {
-      $('.toc', rail).appendChild(list); rail.hidden = false; root.classList.add('has-toc');
-      var place = function () {
-        var page = $('.page');
-        if (page) rail.style.setProperty('--toc-top', (content.getBoundingClientRect().top - page.getBoundingClientRect().top) + 'px');
-      };
-      place(); window.addEventListener('resize', place); window.addEventListener('load', place);
+      railToc.appendChild(list); rail.hidden = false; root.classList.add('has-toc');
+      placeRail(rail, content);
     }
     var sheet = initSheet(list);
     var links = $$('.toc a'), last, ticking = false;
+    // A long outline scrolls inside the rail: keep the current section in view there (the page itself never moves).
+    function keepInView(id) {
+      if (!railToc || railToc.scrollHeight <= railToc.clientHeight) return;
+      var a = $('a[data-target="' + id + '"]', railToc);
+      if (!a) return;
+      var top = a.offsetTop - railToc.offsetTop, h = railToc.clientHeight;
+      if (top < railToc.scrollTop + 24 || top > railToc.scrollTop + h - 48) railToc.scrollTop = Math.max(0, top - h / 3);
+    }
     function mark() {
       var active = null, activeText = '';
       for (var i = 0; i < heads.length; i++) {
@@ -577,6 +594,7 @@
       if (active !== last) {
         last = active;
         links.forEach(function (l) { l.classList.toggle('is-active', l.getAttribute('data-target') === active); });
+        if (active) keepInView(active);
         if (sheet) sheet.label(activeText || '목차');
       }
       if (sheet) {
@@ -713,7 +731,6 @@
       .catch(function () {}); // no list: the post still has prev/next
   }
   function renderSeries(box, me, items, sEl, mEl) {
-    var pathOf = function (h) { try { return new URL(h, location.href).pathname.replace(/\/+$/, ''); } catch (e) { return h; } };
     var here = pathOf(location.href), main = mEl.textContent.trim(), list = items.slice(), cur = null;
     list.forEach(function (it) { if (!cur && it.href && pathOf(it.href) === here) cur = it; });
     list.forEach(function (it) { if (!cur && it.main === main) cur = it; });
@@ -736,7 +753,7 @@
     head.appendChild(span('series-nav__count', list.length + '편'));
     list.forEach(function (it, i) {
       var li = doc.createElement('li'), el = doc.createElement(it === cur ? 'span' : 'a'), d = ymd(it.date);
-      li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 3 ? ' is-far' : '');
+      li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 2 ? ' is-far' : '');
       el.className = 'series-nav__link';
       if (it === cur) el.setAttribute('aria-current', 'page'); else el.href = it.href;
       el.appendChild(span('series-nav__ep', it.ep || (d ? d[1] + '.' + d[2] : String(i + 1))));
@@ -744,19 +761,115 @@
       li.appendChild(el);
       ol.appendChild(li);
     });
-    if (list.length > 9) { // long series: the posts around this one, then the rest on request
+    if (list.length > 5 && $$('.is-far', ol).length) { // long series: two episodes either side, then the rest on request
       var more = doc.createElement('button');
       more.type = 'button'; more.className = 'series-nav__more'; more.textContent = '전체 ' + list.length + '편 보기';
       more.addEventListener('click', function () { box.classList.add('is-open'); more.remove(); });
       box.appendChild(more);
     } else box.classList.add('is-open');
     box.hidden = false;
-    // The series label above the title now leads to the list.
+    // The series label above the title now leads to the list, and says where this post stands in it.
     var link = doc.createElement('a');
     link.className = sEl.className + ' series--link';
     link.href = '#series';
     link.textContent = sEl.textContent;
+    link.appendChild(span('series__pos', list.length + '편 중 ' + (at + 1) + '번째'));
     sEl.parentNode.replaceChild(link, sEl);
+    // Prev/next become the neighbouring episodes; the next one is also the post's next read.
+    var prevEp = list[at - 1], nextEp = list[at + 1];
+    seriesNavItem('prev', prevEp && prevEp.href ? prevEp : null);
+    seriesNavItem('next', nextEp && nextEp.href ? nextEp : null);
+    if (nextEp && nextEp.href) nextRead.set({ href: nextEp.href, label: '다음 편' + (nextEp.ep ? ' · ' + nextEp.ep : ''), title: nextEp.main });
+    dedupeFooter();
+  }
+  function dateLabel(s) {
+    var d = ymd(s);
+    return d ? d.join('.') : TIME_ONLY.test(s || '') ? '오늘' : '';
+  }
+  /* Tistory's prev/next are by date, so on "3일차" the next post can be an unrelated diary entry. In a series the two
+     links point to the neighbouring episodes instead; a side with no episode keeps Tistory's link. */
+  function seriesNavItem(kind, ep) {
+    var nav = $('.post .post-nav');
+    if (!nav || !ep) return;
+    var a = $(kind === 'next' ? '.post-nav__item--next' : '.post-nav__item:not(.post-nav__item--next)', nav);
+    if (!a) {
+      a = doc.createElement('a');
+      a.className = 'post-nav__item' + (kind === 'next' ? ' post-nav__item--next' : '');
+      a.innerHTML = '<span class="post-nav__label"></span><strong class="post-nav__title"></strong><time class="post-nav__date"></time>';
+      if (kind === 'next') nav.appendChild(a); else nav.insertBefore(a, nav.firstChild);
+    }
+    a.href = ep.href;
+    a.classList.add('post-nav__item--series');
+    $('.post-nav__label', a).textContent = (kind === 'next' ? '다음 편' : '이전 편') + (ep.ep ? ' · ' + ep.ep : '');
+    var title = $('.post-nav__title', a);
+    title.textContent = ep.main;
+    title.classList.remove('has-series');
+    var date = $('.post-nav__date', a);
+    if (date) date.textContent = dateLabel(ep.date);
+  }
+
+  /* ---------- Next read: one link to the next step, under the outline in the rail and the phone sheet ----------
+     Series next episode (set by renderSeries) > Tistory's next post > the first same-category post. The rail shows it
+     once 60% of the post has been read; a post too short for an outline gets a rail with only this link. */
+  var nextRead = { set: function () {} };
+  function initNextRead(content) {
+    var slots = $$('.next-read');
+    var rail = $('.toc-rail'), railSlot = rail && $('.next-read', rail);
+    if (!slots.length) return;
+    var current = null;
+    function fill(t) {
+      current = t;
+      slots.forEach(function (slot) {
+        slot.textContent = '';
+        var a = doc.createElement('a'), label = doc.createElement('span'), title = doc.createElement('span');
+        a.className = 'next-read__link'; a.href = t.href;
+        label.className = 'next-read__label'; label.textContent = t.label;
+        title.className = 'next-read__title'; title.textContent = t.title;
+        a.appendChild(label); a.appendChild(title);
+        slot.appendChild(a);
+        slot.hidden = false;
+      });
+      if (rail && rail.hidden && !doc.body.classList.contains('toc-off')) {
+        rail.hidden = false;
+        rail.classList.add('toc-rail--next-only');
+        placeRail(rail, content);
+      }
+    }
+    nextRead.set = fill;
+    var mainText = function (el) { if (!el) return ''; var m = $('.series-main', el); return (m || el).textContent.trim(); };
+    var next = $('.post .post-nav__item--next'), rel = $('.post .related__list a') || $('.post #article-view .another_category th a');
+    if (next && next.getAttribute('href')) fill({ href: next.getAttribute('href'), label: '다음 글', title: mainText($('.post-nav__title', next)) });
+    else if (rel) fill({ href: rel.getAttribute('href'), label: '같은 카테고리의 글', title: mainText($('.related__name', rel) || rel) });
+    if (!railSlot) return;
+    var ticking = false;
+    function reveal() {
+      ticking = false;
+      if (!current) return;
+      var r = content.getBoundingClientRect(), total = r.height - innerHeight * 0.6;
+      if (total <= 0 || -r.top / total >= 0.6) { railSlot.classList.add('is-ready'); removeEventListener('scroll', onScroll); }
+    }
+    function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(reveal); } }
+    addEventListener('scroll', onScroll, { passive: true });
+    reveal();
+  }
+
+  /* ---------- Footer lists on a post: no repeats ----------
+     The footer's 최근 글 · 인기 글 drop the post being read and any post already linked at the end of it
+     (prev/next, series, same-category lists). Runs again once the series list arrives. */
+  function dedupeFooter() {
+    var foot = $('#tt-body-page .foot-mods');
+    if (!foot) return;
+    var seen = {};
+    seen[pathOf(location.href)] = true;
+    $$('.post .post-nav a[href], .post .series-nav a[href], .post .related a[href], .post #article-view .another_category th a[href]').forEach(function (a) {
+      var h = a.getAttribute('href');
+      if (h && h.charAt(0) !== '#') seen[pathOf(h)] = true;
+    });
+    $$('.module__list > li', foot).forEach(function (li) {
+      var a = $('a[href]', li), h = a && a.getAttribute('href');
+      if (h && h.charAt(0) !== '#' && seen[pathOf(h)]) li.remove();
+    });
+    $$('.module', foot).forEach(function (m) { var l = $('.module__list', m); if (l && !l.children.length) m.hidden = true; });
   }
 
   /* ---------- Author: one card with Tistory's namecard ----------
@@ -825,6 +938,7 @@
       initMarkdown(content); initCode(content); initTables(content); initReadTime(content);
       var heads = tocHeads(content);
       initToc(content, heads); initHeadingLinks(heads); initProgress(content);
+      initNextRead(content); dedupeFooter();
       initSeriesNav(); initAuthorMerge();
     }
   }
