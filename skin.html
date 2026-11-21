@@ -215,6 +215,24 @@
                 <s_rp_count><a href="#comments">댓글 [##_article_rep_rp_cnt_##]</a></s_rp_count>
                 <span class="js-readtime" hidden></span>
               </div>
+              <!-- Returning reader: where they stopped last time (saved by script.js in this browser only). Written inline,
+                   during parsing, so the line is in place before the body paints and nothing below it shifts. -->
+              <p class="resume" hidden></p>
+              <script>
+                (function () {
+                  try {
+                    var el = document.currentScript && document.currentScript.previousElementSibling;
+                    var s = JSON.parse(localStorage.getItem('salieri-read') || '{}')[location.pathname.replace(/\/+$/, '')];
+                    if (!el || !s || !(s.p >= 0.1 && s.p < 0.9)) return;
+                    var t = document.createElement('span'), a = document.createElement('a');
+                    t.className = 'resume__text';
+                    t.textContent = s.l ? '지난번에 「' + s.l + '」까지 읽었습니다' : '지난번에 ' + Math.round(s.p * 100) + '%까지 읽었습니다';
+                    a.className = 'resume__link'; a.href = s.h ? '#' + s.h : '#article-view'; a.textContent = '이어 읽기';
+                    a.setAttribute('data-p', s.p);
+                    el.appendChild(t); el.appendChild(a); el.hidden = false;
+                  } catch (e) {}
+                })();
+              </script>
               <s_ad_div>
                 <div class="owner-tools">
                   <a href="[##_s_ad_m_link_##]" onclick="[##_s_ad_m_onclick_##]">수정</a>

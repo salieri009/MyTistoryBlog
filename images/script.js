@@ -275,6 +275,44 @@
     });
   }
 
+  /* ---------- Returning readers: what is new since the last visit ----------
+     Stored in this browser only (localStorage "salieri-visit"). The first page of a session reads the previous visit
+     and keeps it for the whole session, so the marks do not vanish while the reader moves between pages.
+     Index rows newer than that visit get a "새 글" tag; a first-time visitor sees none. */
+  function initVisitMarks() {
+    var prev = session.get('salieri-visit-prev'), now = Date.now();
+    if (prev === null) {
+      var saved = null;
+      try { saved = JSON.parse(store.get('salieri-visit') || 'null'); } catch (e) {}
+      prev = saved && saved.last ? String(saved.last) : '';
+      session.set('salieri-visit-prev', prev);
+    }
+    store.set('salieri-visit', JSON.stringify({ last: now }));
+    if (!prev || !+prev) return;
+    var since = new Date(+prev), sinceDay = since.getFullYear() * 10000 + (since.getMonth() + 1) * 100 + since.getDate();
+    var today = todayYmd().join('');
+    $$('.idx__row').forEach(function (row) {
+      var t = $('.idx__date', row), iso = t && t.getAttribute('datetime');
+      if (!iso || $('.idx__new', row)) return;
+      var day = +iso.replace(/-/g, ''), fresh = day > sinceDay;
+      // Today's rows carry the exact time ("14:48:21"): compare it when the last visit was also today.
+      var raw = row.getAttribute('data-date') || '';
+      if (!fresh && day === sinceDay && String(day) === today && TIME_ONLY.test(raw)) {
+        var hm = raw.trim().split(':');
+        var posted = new Date(); posted.setHours(+hm[0], +hm[1], +(hm[2] || 0), 0);
+        fresh = posted.getTime() > since.getTime();
+      }
+      if (!fresh) return;
+      row.classList.add('is-new');
+      var tag = doc.createElement('span');
+      tag.className = 'idx__new';
+      tag.textContent = '새 글';
+      var cat = $('.idx__cat', row);
+      if (cat) cat.insertBefore(tag, cat.firstChild);
+      else $('.idx__main', row).appendChild(tag);
+    });
+  }
+
   /* ---------- Tistory's fixed toolbar ----------
      On desktop Tistory pins a "구독하기" toolbar (.menu_toolbar, z-index 9999) to the top-right corner, over the
      header's search and theme buttons. The header keeps the toolbar's width free; the toolbar is left as it is. */
@@ -666,6 +704,48 @@
     addEventListener('resize', update); update();
   }
 
+  /* ---------- Resume reading ----------
+     Where the reader is in each post (progress and the section above the fold) is kept in this browser only
+     (localStorage "salieri-read", the 30 most recent posts). The inline script under the post meta shows
+     "지난번에 「…」까지 읽었습니다 · 이어 읽기" on the next visit; a post read to the end is marked done. */
+  var READ_KEY = 'salieri-read', READ_MAX = 30;
+  function readLog() { try { return JSON.parse(store.get(READ_KEY) || '{}') || {}; } catch (e) { return {}; } }
+  function initResume(content, heads) {
+    var here = pathOf(location.href), titleEl = $('.post .post__title');
+    var title = titleEl ? ($('.series-main', titleEl) || titleEl).textContent.trim() : doc.title;
+    var labels = heads.map(function (h) { return h.textContent.trim(); }); // read before the "#" section links are added
+    var line = $('.post .resume'), link = line && !line.hidden && $('.resume__link', line);
+    function progress() {
+      var r = content.getBoundingClientRect(), total = r.height - innerHeight * 0.6;
+      return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1;
+    }
+    function save() {
+      var p = progress();
+      if (p < 0.03) return; // only arrived
+      var log = readLog(), old = log[here], h = -1;
+      for (var i = 0; i < heads.length; i++) { if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) h = i; else break; }
+      log[here] = { p: (old && old.p === 1) || p >= 0.95 ? 1 : +p.toFixed(3), h: h >= 0 ? heads[h].id : '', l: h >= 0 ? labels[h] : '', t: title, at: Date.now() };
+      var keys = Object.keys(log).sort(function (a, b) { return (log[b].at || 0) - (log[a].at || 0); });
+      keys.slice(READ_MAX).forEach(function (k) { delete log[k]; });
+      store.set(READ_KEY, JSON.stringify(log));
+      if (line && !line.hidden && link && p > +link.getAttribute('data-p')) line.hidden = true; // caught up
+    }
+    var timer = null;
+    addEventListener('scroll', function () { if (!timer) timer = setTimeout(function () { timer = null; save(); }, 1000); }, { passive: true });
+    addEventListener('pagehide', save);
+    doc.addEventListener('visibilitychange', function () { if (doc.visibilityState === 'hidden') save(); });
+    if (link) {
+      link.addEventListener('click', function (e) {
+        var id = (link.getAttribute('href') || '').slice(1), target = id && doc.getElementById(id);
+        line.hidden = true;
+        if (target && target !== content) return; // the section still exists: the anchor jump does it
+        e.preventDefault(); // the section was renamed since: go to the same share of the post
+        var r = content.getBoundingClientRect(), total = r.height - innerHeight * 0.6;
+        scrollTo(0, r.top + scrollY + total * +link.getAttribute('data-p'));
+      });
+    }
+  }
+
   /* Section links: "#" after each outline heading copies the address of that section. */
   function initHeadingLinks(heads) {
     heads.forEach(function (h) {
@@ -933,11 +1013,12 @@
     initSearchMark();
     initPaging();
     initIndex();
+    initVisitMarks();
     var content = $('.post #article-view');
     if (content) {
       initMarkdown(content); initCode(content); initTables(content); initReadTime(content);
       var heads = tocHeads(content);
-      initToc(content, heads); initHeadingLinks(heads); initProgress(content);
+      initToc(content, heads); initResume(content, heads); initHeadingLinks(heads); initProgress(content);
       initNextRead(content); dedupeFooter();
       initSeriesNav(); initAuthorMerge();
     }
