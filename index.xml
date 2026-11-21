@@ -2,9 +2,9 @@
 <skin>
   <information>
     <name>Salieri Index</name>
-    <version>3.0.0</version>
+    <version>3.1.0</version>
     <description>
-      <![CDATA[ 글자가 먼저인 담백한 스킨입니다. 연도별 글 목록, 시리즈 제목 분리([과정] N일차 :: 주제), 목차, 읽는 시간, 코드 복사, 다크 모드를 지원합니다. 색은 Salieri 다이어그램 팔레트를 따릅니다. ]]>
+      <![CDATA[ 글자가 먼저인 담백한 스킨입니다. 연도별 글 목록, 시리즈 제목 분리([과정] N일차 :: 주제)와 시리즈 이어 보기, 다음에 읽기, 이어 읽기와 새 글 표시, 검색 미리보기, 목차, 읽는 시간, 코드 복사, 다크 모드를 지원합니다. 색은 Salieri 다이어그램 팔레트를 따릅니다. ]]>
     </description>
     <license>
       <![CDATA[ MIT License ]]>

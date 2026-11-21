@@ -28,6 +28,14 @@ hobby and language-study posts, many of them image-heavy.
 3. **The owner** writing daily: success = posts written in the Tistory editor (headings size26/23, quotes style1–3,
    code blocks, tables, image blocks) look intentional without hand-styling.
 
+## How success is measured (since v3.1, 2026-11-21)
+
+- **Pages per visit**: Tistory stats, 조회수 ÷ 방문자 over two weeks, before vs after an upload. Prefetch runs only on
+  pointer-down so it does not inflate 조회수.
+- **First-view stability**: lab CLS under 0.1 on a post (slow 4G, 4x CPU, phone width); field CLS/LCP in Search
+  Console when the blog has enough traffic.
+- Baseline and method: `docs/retention-baseline.md`.
+
 ## Surfaces and modes
 
 | Surface | Tistory body id | Mode |
