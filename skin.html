@@ -69,7 +69,7 @@
       if (t && k < 2) t.hidden = true;
     };
 
-    /* Home guide (이어 읽기 · 연재 중). Called inline right after the home lists are parsed, so the guide is in place
+    /* Home guide (이어 읽기 · 최근 시리즈). Called inline right after the home lists are parsed, so the guide is in place
        before the list paints and nothing below it shifts. Everything comes from those lists and this browser's own
        reading log (written by images/script.js); with nothing to show the guide stays hidden. */
     window.salieriGuide = function () {
@@ -99,7 +99,9 @@
       column('resume', '이어 읽기', open.slice(0, 2).map(function (k) {
         return { href: k, name: log[k].t, meta: Math.round(log[k].p * 100) + '% 읽음' + (log[k].l ? ' · ' + log[k].l : '') };
       }));
-      var groups = {}, order = [], rows = d.querySelectorAll('.covers .idx__row, .idx--loose .idx__row');
+      // 최근 시리즈: a title prefix with an episode number, seen at least twice on this page, latest episode within 30
+      // days. The skin cannot know whether a series is still running, so it only says what the list shows.
+      var groups = {}, order = [], rows = d.querySelectorAll('.covers .idx__row, .idx--loose .idx__row'), now = Date.now();
       for (var r = 0; r < rows.length; r++) {
         var a = rows[r].querySelector('a[href]'), t = rows[r].querySelector('.idx__title');
         if (!a || !t) continue;
@@ -107,13 +109,15 @@
         if (at < 1) continue;
         var m = text.slice(0, at).trim().match(EP), main = text.slice(at + 2).trim();
         if (!m || !main) continue;
+        var raw = rows[r].getAttribute('data-date') || '', ymd = raw.match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})/);
+        var when = ymd ? new Date(+ymd[1], +ymd[2] - 1, +ymd[3]).getTime() : /^\s*\d{1,2}:\d{2}/.test(raw) ? now : 0; // a bare time = today
         var key = m[1].trim(), g = key.toLowerCase();
-        if (!groups[g]) { groups[g] = { name: key, href: a.getAttribute('href'), latest: m[2] + m[3].replace(/\s+/g, '') + ' · ' + main, n: 0 }; order.push(g); }
+        if (!groups[g]) { groups[g] = { name: key, href: a.getAttribute('href'), latest: m[2] + m[3].replace(/\s+/g, '') + ' · ' + main, when: when, n: 0 }; order.push(g); }
         groups[g].n++;
       }
-      column('series', '연재 중', order.slice(0, 3).map(function (g) {
+      column('series', '최근 시리즈', order.filter(function (g) { return groups[g].n > 1 && now - groups[g].when <= 30 * 864e5; }).slice(0, 3).map(function (g) {
         var s = groups[g];
-        return { href: s.href, name: s.name, meta: s.latest + (s.n > 1 ? ' · 최근 글 중 ' + s.n + '편' : '') };
+        return { href: s.href, name: s.name, meta: s.latest + ' · 최근 글 중 ' + s.n + '편' };
       }));
       if (box.children.length) box.hidden = false;
     };
@@ -186,8 +190,8 @@
       <!-- Top-level categories as tabs (index + lists) -->
       <nav class="tabs" aria-label="카테고리">[##_category_list_##]</nav>
 
-      <!-- Home guide (index only; skin option 홈 길잡이): 이어 읽기 · 연재 중 · 많이 읽힌 글, built by script.js from this
-           page's own lists and the visitor's browser. Stays hidden when there is nothing to show. -->
+      <!-- Home guide (index only; skin option 홈 길잡이): 이어 읽기 · 최근 시리즈, built inline (salieriGuide in <head>) from
+           this page's own list and the visitor's browser. Stays hidden when there is nothing to show. -->
       <section class="guide" aria-label="길잡이" hidden></section>
 
       <!-- ===== Home covers ===== -->
@@ -536,8 +540,9 @@
         <div class="toc-rail__inner">
           <p class="toc-rail__title">목차</p>
           <nav class="toc" aria-label="이 글의 목차"></nav>
-          <div class="next-read" hidden></div>
           <a class="toc-rail__top" href="#main">맨 위로</a>
+          <!-- Revealed after 60% of the post; it sits last so its reserved space never leaves a gap mid-rail -->
+          <div class="next-read" hidden></div>
         </div>
       </div>
 

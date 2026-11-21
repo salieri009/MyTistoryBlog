@@ -172,7 +172,7 @@
       <variable>
         <name>homeGuide</name>
         <label><![CDATA[ 홈 길잡이 ]]></label>
-        <description><![CDATA[ 홈 글 목록 위에 이어 읽기 · 연재 중인 시리즈 · 많이 읽힌 글을 보여 줍니다. 내용은 블로그의 글 목록과 방문자 브라우저의 읽은 기록에서 오고, 보여 줄 것이 없으면 나타나지 않습니다. ]]></description>
+        <description><![CDATA[ 홈 글 목록 위에 이어 읽기와 최근 시리즈(목록에 2편 이상, 최근 30일)를 보여 줍니다. 내용은 블로그의 글 목록과 방문자 브라우저의 읽은 기록에서 오고, 보여 줄 것이 없으면 나타나지 않습니다. ]]></description>
         <type>SELECT</type>
         <option>
           <![CDATA[

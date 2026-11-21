@@ -56,8 +56,14 @@ Strategy: restrained. One accent; the semantic colors appear only inside posts, 
 - **≥ 1080px:** two columns. Home and lists: `main | aside 288px` (gap 72px). The aside holds the profile and
   every sidebar module, with the category tree as the primary wayfinding (current category highlighted).
   Posts: `article ≤ 760px | contents rail 232px`, centered as one unit (gap 88px); the rail is sticky, starts at
-  the body's top, and ends with "다음에 읽기" and "맨 위로" pinned under an outline that scrolls on its own (the
-  current section is kept in view). A post too short for an outline gets a rail with only "다음에 읽기".
+  the body's top, and ends with "맨 위로" and then "다음에 읽기" (title first, the relation as muted meta), pinned
+  under an outline that scrolls on its own (the current section is kept in view). The next-read link appears after
+  60% of the post; it sits last so its reserved space never leaves a gap mid-rail. A post too short for an outline
+  gets a rail with only "다음에 읽기".
+- **Series facts**: the series list reads every page of the blog's own search (up to five). Counts ("12편",
+  "12편 중 3번째") show only when all matches were read, and prev/next become 이전 편 / 다음 편 only for episode
+  n ± 1; otherwise Tistory's own prev/next stay. The home guide says "최근 시리즈" (two or more episodes on the
+  page, latest within 30 days), never "ongoing".
 - **< 1080px:** one column. Category tabs (edge fade, current tab centered) replace the aside tree; the aside
   modules stack below the list; posts get a collapsible inline TOC, and while reading, a bottom-right
   current-section button (44px) that opens the contents as a bottom sheet with "맨 위로".
@@ -79,7 +85,7 @@ Most visitors land on a post (search, shared links, camp submissions), not on th
 | Land on a post, confirm it is relevant | search visitor, grader | Breadcrumb `부모 › 자식` (both linked), series label (+ "12편 중 3번째" on wide screens), title, byline with avatar, date, comments, reading time; TOC rail/sheet |
 | Finish, keep reading | search visitor | One next step: tags → prev/next, which become 이전 편 / 다음 편 in a series ("다음" first on phones) → series list (±2 episodes, rest on request) → same-category posts with thumbnails. "다음에 읽기" also sits under the outline (rail after 60% read, phone sheet). The post footer drops posts already linked above |
 | Who wrote this, ask a question | grader, recruiter | Author card merged with Tistory's namecard, then comments themed like the body (16px/1.75, keep-all, dark mode) |
-| Come back, see what is new | returning reader | "새 글" tags on rows newer than the last visit, "오늘" for today's posts, visited titles dimmed, "지난번에 「…」까지 읽었습니다 · 이어 읽기" under the post meta, home guide (이어 읽기 · 연재 중) above the latest posts |
+| Come back, see what is new | returning reader | "새 글" tags on rows newer than the last visit, "오늘" for today's posts, visited titles dimmed, "지난번에 「…」까지 읽었습니다 · 이어 읽기" under the post meta, home guide (이어 읽기 · 최근 시리즈) above the latest posts |
 | Look something up | any | Search as you type (first five matches, arrows + Enter), "/" opens search, an empty result lists most-read posts and top categories |
 | Browse a topic | hobby/travel reader | Subcategory chips under the list head (current shaded), current category in the aside tree, rows show the deepest category only |
 

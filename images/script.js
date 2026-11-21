@@ -191,8 +191,8 @@
       h.className = 'empty-help__title'; h.textContent = heading;
       s.appendChild(h); s.appendChild(body); help.appendChild(s);
     };
-    var popular = $('.aside .module--popular .module__list');
-    if (popular && popular.children.length) section('많이 읽힌 글', popular.cloneNode(true));
+    var popular = $('.aside .module--popular .module__list'), moved = [];
+    if (popular && popular.children.length) { section('많이 읽힌 글', popular.cloneNode(true)); moved.push('popular'); }
     var tops = $$('.panel__tree .category_list > li > a.link_item');
     if (tops.length) {
       var chips = doc.createElement('nav');
@@ -205,8 +205,12 @@
         chips.appendChild(chip);
       });
       section('카테고리', chips);
+      moved.push('tree');
     }
-    if (help.children.length) empty.parentNode.insertBefore(help, empty.nextSibling);
+    if (!help.children.length) return;
+    empty.parentNode.insertBefore(help, empty.nextSibling);
+    // On a desktop search page the aside sits beside this: the modules shown here step out of it (moved, not doubled).
+    if (id === 'tt-body-search') moved.forEach(function (m) { doc.body.classList.add('empty-moved-' + m); });
   }
 
   /* ---------- Hero: *word* in the hero text becomes an accent ---------- */
@@ -946,8 +950,8 @@
     if (words.length < 2) return;
     var cacheKey = 'salieri-series:' + me.key.toLowerCase(), cached = null;
     try { cached = JSON.parse(session.get(cacheKey) || 'null'); } catch (e) {}
-    if (cached && Date.now() - cached.t < 10 * 60 * 1000) { renderSeries(box, me, cached.items, sEl, mEl); return; }
-    searchPage(words).then(function (res) {
+    if (cached && Date.now() - cached.t < 10 * 60 * 1000) { renderSeries(box, me, cached.items, sEl, mEl, cached.complete); return; }
+    searchAll(words).then(function (res) {
       var items = [];
       res.rows.forEach(function (row) {
         var parts = splitTitle(row.title);
@@ -956,14 +960,31 @@
         if (s.key.toLowerCase() !== me.key.toLowerCase()) return; // the words only appear in the body
         items.push({ href: row.href, main: parts.main, n: s.n, ep: s.ep, date: row.date });
       });
-      session.set(cacheKey, JSON.stringify({ t: Date.now(), items: items }));
-      renderSeries(box, me, items, sEl, mEl);
+      session.set(cacheKey, JSON.stringify({ t: Date.now(), items: items, complete: res.complete }));
+      renderSeries(box, me, items, sEl, mEl, res.complete);
     }).catch(function () {}); // no list: the post still has prev/next
   }
+  /* Every page of a search (up to five), so a long series is not judged by its first 20 results.
+     complete = all of Tistory's matches were read; only then may the skin state counts. */
+  function searchAll(words) {
+    var rows = [], seen = {}, total = 0;
+    function next(page) {
+      return searchPage(words, null, page).then(function (res) {
+        total = res.count;
+        var fresh = res.rows.filter(function (r) { if (seen[r.href]) return false; seen[r.href] = true; return true; });
+        rows = rows.concat(fresh);
+        if (fresh.length && rows.length < total && page < 5) return next(page + 1);
+        return { rows: rows, count: total, complete: rows.length >= total };
+      });
+    }
+    return next(1);
+  }
   /* The blog's own search page, read through this skin's markup: rows { href, title, date, cat } and the total count. */
-  function searchPage(words, signal) {
+  function searchPage(words, signal, page) {
     // __SKIN_SEARCH__: set only by the local preview harness
-    return fetch((window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words), { credentials: 'same-origin', signal: signal })
+    var url = (window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words);
+    if (page > 1) url += (url.indexOf('?') === -1 ? '?' : '&') + 'page=' + page;
+    return fetch(url, { credentials: 'same-origin', signal: signal })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function (html) {
         var page = new DOMParser().parseFromString(html, 'text/html'), rows = [];
@@ -975,7 +996,9 @@
         return { rows: rows, count: (n && parseInt(n.textContent, 10)) || rows.length };
       });
   }
-  function renderSeries(box, me, items, sEl, mEl) {
+  /* complete: every search match was read (searchAll). Counts ("12편", "12편 중 3번째") are shown only then, and prev/next
+     become episodes only when the neighbour's number is exactly one step away, so a partial list never invents facts. */
+  function renderSeries(box, me, items, sEl, mEl, complete) {
     var here = pathOf(location.href), main = mEl.textContent.trim(), list = items.slice(), cur = null;
     list.forEach(function (it) { if (!cur && it.href && pathOf(it.href) === here) cur = it; });
     list.forEach(function (it) { if (!cur && it.main === main) cur = it; });
@@ -995,7 +1018,7 @@
     head.textContent = '';
     head.appendChild(span('series-nav__label', '시리즈'));
     head.appendChild(span('series-nav__name', me.key));
-    head.appendChild(span('series-nav__count', list.length + '편'));
+    if (complete) head.appendChild(span('series-nav__count', list.length + '편'));
     list.forEach(function (it, i) {
       var li = doc.createElement('li'), el = doc.createElement(it === cur ? 'span' : 'a'), d = ymd(it.date);
       li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 2 ? ' is-far' : '');
@@ -1008,7 +1031,7 @@
     });
     if (list.length > 5 && $$('.is-far', ol).length) { // long series: two episodes either side, then the rest on request
       var more = doc.createElement('button');
-      more.type = 'button'; more.className = 'series-nav__more'; more.textContent = '전체 ' + list.length + '편 보기';
+      more.type = 'button'; more.className = 'series-nav__more'; more.textContent = complete ? '전체 ' + list.length + '편 보기' : '목록 모두 보기';
       more.addEventListener('click', function () { box.classList.add('is-open'); more.remove(); });
       box.appendChild(more);
     } else box.classList.add('is-open');
@@ -1018,13 +1041,14 @@
     link.className = sEl.className + ' series--link';
     link.href = '#series';
     link.textContent = sEl.textContent;
-    link.appendChild(span('series__pos', list.length + '편 중 ' + (at + 1) + '번째'));
+    if (complete) link.appendChild(span('series__pos', list.length + '편 중 ' + (at + 1) + '번째'));
     sEl.parentNode.replaceChild(link, sEl);
-    // Prev/next become the neighbouring episodes; the next one is also the post's next read.
-    var prevEp = list[at - 1], nextEp = list[at + 1];
-    seriesNavItem('prev', prevEp && prevEp.href ? prevEp : null);
-    seriesNavItem('next', nextEp && nextEp.href ? nextEp : null);
-    if (nextEp && nextEp.href) nextRead.set({ href: nextEp.href, label: '다음 편' + (nextEp.ep ? ' · ' + nextEp.ep : ''), title: nextEp.main });
+    // Prev/next become the neighbouring episodes (n - 1 and n + 1 only); the next one is also the post's next read.
+    var step = function (ep, d) { return ep && ep.href && cur.n !== null && ep.n === cur.n + d ? ep : null; };
+    var prevEp = step(list[at - 1], -1), nextEp = step(list[at + 1], 1);
+    seriesNavItem('prev', prevEp);
+    seriesNavItem('next', nextEp);
+    if (nextEp) nextRead.set({ href: nextEp.href, label: '다음 편' + (nextEp.ep ? ' · ' + nextEp.ep : ''), title: nextEp.main });
     dedupeFooter();
   }
   function dateLabel(s) {
@@ -1068,9 +1092,9 @@
         slot.textContent = '';
         var a = doc.createElement('a'), label = doc.createElement('span'), title = doc.createElement('span');
         a.className = 'next-read__link'; a.href = t.href;
-        label.className = 'next-read__label'; label.textContent = t.label;
+        label.className = 'next-read__meta'; label.textContent = t.label;
         title.className = 'next-read__title'; title.textContent = t.title;
-        a.appendChild(label); a.appendChild(title);
+        a.appendChild(title); a.appendChild(label); // the title leads; "다음 편 · 4일차" follows as quiet meta
         slot.appendChild(a);
         slot.hidden = false;
       });

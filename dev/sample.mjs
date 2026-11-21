@@ -272,6 +272,19 @@ const seriesRows = TOPICS.map((topic, i) => ({
   { title: '[다른 과정] 최종 프로젝트 1일차 :: 이름만 같은 다른 시리즈', link: '/entry/480', date: '2026.10.02', cat: '개발/Backend' },
   { title: '최종 프로젝트를 준비하며 읽은 책', link: '/entry/470', date: '2026.09.20', cat: '독서' },
 ]);
+// A search that does not fit on one page (Tistory reports 40 matches, the page lists 13) and is missing 4일차:
+// the series list must show no counts, and 다음 편 must not jump to 5일차 (post-partial uses it).
+const listRepOf = (rows) => rows.map((r, i) => ({
+  list_rep_link: r.link, list_rep_title: r.title, list_rep_title_text: r.title, list_rep_summary: summary,
+  list_rep_regdate: r.date, list_rep_category: r.cat, list_rep_category_link: '#', list_rep_rp_cnt: i % 4, list_rep_author: '샘플 필명',
+  list_rep_thumbnail: '', list_rep_thumbnail_url: '',
+}));
+pages['search-mock-partial'] = {
+  body_id: 'tt-body-search', search_text: '최종 프로젝트',
+  list: { list_conform: '최종 프로젝트', list_count: 40, list_description: '', list_style: '', list_empty: false,
+    list_rep: listRepOf(seriesRows.filter((r) => !/ 4일차 /.test(r.title))) },
+};
+pages['post-partial'] = { ...pages.post, searchMock: 'search-mock-partial' };
 pages['search-mock'] = {
   body_id: 'tt-body-search', search_text: '최종 프로젝트',
   list: { list_conform: '최종 프로젝트', list_count: seriesRows.length, list_description: '', list_style: '', list_empty: false,
