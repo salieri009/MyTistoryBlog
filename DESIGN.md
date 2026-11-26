@@ -13,6 +13,10 @@ Visual system for the skin in this repo. Product truth lives in PRODUCT.md.
    behind it are in `docs/retention-baseline.md`. Added: one next step at the end of a post, returning-reader memory,
    search as you type, a home guide; fixed: unreadable dark-mode comments, the header under Tistory's toolbar, posts
    that jumped while loading.
+5. **v3.2, research round (2026-11-26)**: the first click after a post is the lever (a second page view lifts the
+   7-day return rate from 8% to 22%). Research, decisions and what was rejected (hover previews, auto-loaded next
+   posts) are in `docs/retention-research.md`. Added: "함께 읽을 글" by topic, the reader's own series progress, series
+   arrows at the top of a post, a subscribe pointer on the latest episode, ranked next read. No new skin option.
 
 The skin is **data-agnostic**: every title, category, count, date and image comes from Tistory template tags.
 Persona-specific values (hero sentence, GitHub/X links) are **skin option defaults** in index.xml, editable in admin.
@@ -83,9 +87,10 @@ Most visitors land on a post (search, shared links, camp submissions), not on th
 | Flow | Who | Layout answer |
 |---|---|---|
 | Land on a post, confirm it is relevant | search visitor, grader | Breadcrumb `부모 › 자식` (both linked), series label (+ "12편 중 3번째" on wide screens), title, byline with avatar, date, comments, reading time; TOC rail/sheet |
-| Finish, keep reading | search visitor | One next step: tags → prev/next, which become 이전 편 / 다음 편 in a series ("다음" first on phones) → series list (±2 episodes, rest on request) → same-category posts with thumbnails. "다음에 읽기" also sits under the outline (rail after 60% read, phone sheet). The post footer drops posts already linked above |
+| Finish, keep reading | search visitor | One next step: tags → prev/next, which become 이전 편 / 다음 편 in a series ("다음" first on phones) → series list (±2 episodes, rest on request; on the latest episode a line pointing at Tistory's subscribe button) → **함께 읽을 글** (a chip per topic, three posts each, see "Related by topic"; the same-category grid is the fallback). "다음에 읽기" also sits under the outline (rail after 60% read, phone sheet), ranked: next (or first unread) episode > first post of the reader's topic > Tistory's next post > same category. The post footer drops posts already linked above |
+| Move through a series | grader, peer | ‹ › on the breadcrumb row go to episodes n ± 1 (only when both are known); the series list marks what this reader finished (읽음) or started (읽는 중) and says "N편 읽음" |
 | Who wrote this, ask a question | grader, recruiter | Author card merged with Tistory's namecard, then comments themed like the body (16px/1.75, keep-all, dark mode) |
-| Come back, see what is new | returning reader | "새 글" tags on rows newer than the last visit, "오늘" for today's posts, visited titles dimmed, "지난번에 「…」까지 읽었습니다 · 이어 읽기" under the post meta, home guide (이어 읽기 · 최근 시리즈) above the latest posts |
+| Come back, see what is new | returning reader | "새 글" tags on rows newer than the last visit, "오늘" for today's posts, visited titles dimmed, "지난번에 「…」까지 읽었습니다 · 이어 읽기" under the post meta, home guide (이어 읽기 · 최근 시리즈 with "N편 읽음") above the latest posts |
 | Look something up | any | Search as you type (first five matches, arrows + Enter), "/" opens search, an empty result lists most-read posts and top categories |
 | Browse a topic | hobby/travel reader | Subcategory chips under the list head (current shaded), current category in the aside tree, rows show the deepest category only |
 
@@ -94,6 +99,29 @@ its own lists and turns its `<h4>` title into an `<h2>` (same text, same place) 
 and the skin's own same-category grid steps aside (`.has-tistory-related`) so the list is not shown twice.
 Aside default order: profile → 공지 → 카테고리 → 인기 글 → 최근 글 → 최근 댓글 → 태그 → 보관함 → 링크 → 방문자
 (reorderable in 꾸미기 → 사이드바).
+
+## Related by topic ("함께 읽을 글", since v3.2)
+
+One post can be about more than one thing: a Spring Boot post that wires in Prometheus. A reader who came for
+Prometheus should be led to Prometheus posts, not to whatever shares the category.
+- **Topics = the post's own tags.** No dictionary. Tags that only repeat the series name or the category are left out.
+- **Weight = where a tag appears.** Title and section headings x3, code x2 (imports, Gradle/Maven lines, config: what
+  the post actually uses), other text x1. ASCII tags match whole words and glued runs ("Spring Boot" = "spring-boot"
+  = "springboot", "java" is not found in "javascript"); Hangul tags match as substrings. A heading that is only the tag
+  ("4. 회고") names a section and does not count. The top three tags with weight ≥ 1 are the topics.
+- **Posts per topic** come from the blog's own tag pages (`/tag/<name>`, rendered by this skin, parsed like search).
+  Left out: the post itself, its own series (the series list has those), anything already linked above. Order:
+  shared topics weighted by rarity, `Σ 1 / log2(2 + posts with the tag)`, then newest. Three per topic.
+- **The first chip is the reader's topic.** Engaged seconds per section (tab visible, input in the last 15 seconds),
+  each section's seconds shared among the topics it mentions. Under five such seconds, the post's own weighting
+  decides. The other chips always follow the post's weighting. Kept in memory only.
+- Chips are WAI-ARIA tabs (arrows, Home, End), each with Tistory's post count for the tag; below the list,
+  "#태그 글 N편 모두 보기". One topic: no chips. Fewer than two posts in all: no block, the category grid stays.
+- **Cost.** At most three tag pages (`ALSO_MAX_TAGS`, checked by `npm run check`), read only once the reader is halfway
+  through or near the tags, cached for the session. A reader who leaves early causes none.
+- **Never moves the page.** The block is filled only while its place is below the view, or above it where scroll
+  anchoring holds the view. If its place is in view when the data arrives (a short post, a jump to the comments), it
+  waits until a scroll takes its place off screen. Its order is settled once, half a screen before it comes into view.
 
 ## Markdown pasted into the basic editor
 
@@ -124,7 +152,10 @@ when they score as Markdown, so editor-built posts are untouched (checked on liv
 | `salieri-read` | localStorage | per post path: progress, section id and label, title, time; 30 most recent; ≥ 95% = done |
 | `salieri-theme` | localStorage | the visitor's light/dark choice |
 | `salieri-series:*` | sessionStorage | series list from the search page, 10 minutes |
+| `salieri-tag:*` | sessionStorage | rows and post count of one tag page ("함께 읽을 글"), 30 minutes |
 
+The reading log also drives the series marks (읽음, 읽는 중, "N편 읽음", "안 읽은 편") and the home guide's count.
+Engaged seconds per section (which topic chip comes first) live in memory only and end with the page.
 Nothing is sent anywhere. Blocked storage (private modes) only turns these features off.
 
 ## Tistory's own parts (themed, never hidden or moved)
@@ -149,6 +180,10 @@ Most visitors arrive cold, so the first view must not jump (lab CLS on a post we
 - `"Pretendard Fallback"`: Malgun Gothic with `size-adjust` 86% (85% bold) so Windows keeps Pretendard's line breaks
   until the web font arrives. JetBrains Mono loads without blocking the first paint.
 - Late text that could wrap a line (the series position) stays off narrow screens.
+- Series arrows: `salieriHead` makes their room on the breadcrumb row while parsing (absolutely placed, the row keeps
+  92px free on the right), so filling them in later moves nothing.
+- "함께 읽을 글" is inserted only off screen (see "Related by topic"). Lab CLS with it (390×844, slow 4G, CPU 4x):
+  first view 0.0012, read to the end 0.019, jump to the comments 0.
 
 ## Motion
 

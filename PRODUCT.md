@@ -34,7 +34,10 @@ hobby and language-study posts, many of them image-heavy.
   pointer-down so it does not inflate 조회수.
 - **First-view stability**: lab CLS under 0.1 on a post (slow 4G, 4x CPU, phone width); field CLS/LCP in Search
   Console when the blog has enough traffic.
-- Baseline and method: `docs/retention-baseline.md`.
+- Baseline and method: `docs/retention-baseline.md`. Research behind v3.2: `docs/retention-research.md`.
+- **Before trusting the comparison (v3.2)**: check once whether the skin's list-page reads (search pages for the series
+  list, tag pages for "함께 읽을 글") show up in Tistory's 조회수 (procedure in `docs/retention-research.md` §7). If they
+  do, pages per visit is inflated and the comparison moves to per-post views.
 
 ## Surfaces and modes
 
