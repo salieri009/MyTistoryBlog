@@ -44,7 +44,7 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, () => {
   build();
-  console.log(`\n  Salieri Index preview → http://localhost:${PORT}/\n  pages: home, home-dark, home-nocover, post, post-dark, category, category-summary, search, protected, tags, guestbook · proposals: /proposals/\n`);
+  console.log(`\n  Salieri Index preview → http://localhost:${PORT}/\n  pages: home, home-dark, home-nocover, post, post-latest, post-notag, post-partial, post-dark, category, category-summary, search, protected, tags, guestbook · proposals: /proposals/\n`);
 });
 
 let timer;

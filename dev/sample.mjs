@@ -106,7 +106,8 @@ def alarm(sensors: list[Sensor], limit: float = 80.0) -&gt; list[str]:
     return [s.name for s in sensors if s.value &gt; limit]
 </code></pre>
 <blockquote data-ke-style="style1"><p>인용 스타일 1입니다. 기억해 둘 한 문장을 강조할 때 씁니다.</p></blockquote>
-<h3 data-ke-size="size23">1-2. 설정 파일</h3>
+<h3 data-ke-size="size23">1-2. Spring Boot 설정 파일</h3>
+<p data-ke-size="size16">Spring Boot 애플리케이션을 Docker 이미지로 묶어 배포합니다.</p>
 <pre class="yaml" data-ke-language="yaml"><code>apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -124,12 +125,23 @@ spec:
 <table style="border-collapse: collapse; width: 100%;" border="1" data-ke-align="alignLeft"><thead><tr><th>구분</th><th>이전</th><th>이후</th><th>변화</th></tr></thead><tbody><tr><td>응답 시간 (ms)</td><td>420</td><td>180</td><td>-57%</td></tr><tr><td>에러율</td><td>2.1%</td><td>0.3%</td><td>-1.8%p</td></tr><tr><td>배포 시간</td><td>15분</td><td>4분</td><td>-11분</td></tr></tbody></table>
 <pre class="bash" data-ke-language="bash"><code>$ kubectl rollout status deploy/sample-api
 deployment "sample-api" successfully rolled out</code></pre>
-<h2 data-ke-size="size26">3. 트러블슈팅</h2>
+<h2 data-ke-size="size26">3. Prometheus 연동</h2>
+<p data-ke-size="size16">지표는 Prometheus가 가져가도록 열어 둡니다. Micrometer 레지스트리를 의존성에 넣으면 Prometheus 형식의 엔드포인트가 생깁니다.</p>
+<pre class="groovy" data-ke-language="groovy"><code>dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+}</code></pre>
+<pre class="yaml" data-ke-language="yaml"><code>management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus</code></pre>
+<h2 data-ke-size="size26">4. 트러블슈팅</h2>
 <blockquote data-ke-style="style2"><p><b>주의.</b> 인용 스타일 2는 경고나 트러블슈팅 메모에 씁니다.</p></blockquote>
 <p data-ke-size="size16">문제가 생긴 원인을 설명하는 문단입니다. 이어지는 단계는 번호 목록으로 정리합니다.</p>
 <ol data-ke-list-type="decimal"><li>로그를 확인한다</li><li>설정 값을 비교한다</li><li>원인을 고치고 다시 배포한다</li></ol>
 <hr data-ke-style="style1">
-<h2 data-ke-size="size26">4. 회고</h2>
+<h2 data-ke-size="size26">5. 회고</h2>
 <blockquote data-ke-style="style3"><p>인용 스타일 3, 상자형입니다. 회고나 요약을 담기 좋습니다.</p></blockquote>
 <p data-ke-size="size16">마지막 문단입니다. 이 아래로 태그, 이전·다음 글, 같은 카테고리의 글, 댓글이 이어집니다.</p>
 </div>`;
@@ -180,7 +192,9 @@ const article = (extra = {}) => ({
   article_rep_id: '512', article_rep_link: '#', article_rep_title: titles[0], article_rep_category: '개발/Cloud · DevOps', article_rep_category_link: '/category/개발/Cloud · DevOps',
   article_rep_author: '샘플 필명', article_rep_date: '2026.11.18 19:54', article_rep_simple_date: '2026.11.18', article_rep_desc: articleBody,
   rp_count: true, article_rep_rp_cnt: 3, ad_div: false,
-  tag_label: { tag_label_rep: ['<a href="#" rel="tag">kubernetes</a>', '<a href="#" rel="tag">배포</a>', '<a href="#" rel="tag">회고</a>'].join(', ') },
+  // Tag links as Tistory prints them (/tag/<name>). The sample body is about Spring Boot and Prometheus, mentions
+  // Docker once and has a "회고" section, so the related-by-topic chips have something to weigh.
+  tag_label: { tag_label_rep: ['Spring Boot', 'Prometheus', 'Docker', '회고'].map((t) => `<a href="/tag/${t}" rel="tag">${t}</a>`).join(', ') },
   article_prev: { article_prev_link: '#', article_prev_title: titles[1], article_prev_date: '2026.11.17' },
   article_next: { article_next_link: '#', article_next_title: titles[2], article_next_date: '2026.11.19' },
   article_related: { article_related_rep: titles.slice(1, 5).map((t, i) => ({ article_related_rep_link: '#', article_related_rep_title: t, article_related_rep_date: date(16 - i), article_related_rep_thumbnail: i === 1 ? '' : img(320, 240, 100 + i * 40), article_related_rep_thumbnail_link: img(320, 240, 100 + i * 40) })) },
@@ -285,6 +299,43 @@ pages['search-mock-partial'] = {
     list_rep: listRepOf(seriesRows.filter((r) => !/ 4일차 /.test(r.title))) },
 };
 pages['post-partial'] = { ...pages.post, searchMock: 'search-mock-partial' };
+
+// The latest episode (12일차): no 다음 편, so the series list ends with the line that points at Tistory's subscribe button.
+pages['post-latest'] = { body_id: 'tt-body-page', article_rep: [article({
+  article_rep_title: `[샘플 과정] 최종 프로젝트 12일차 :: ${TOPICS[11]}`, article_rep_desc: articleBody + tistoryTail,
+  article_prev: { article_prev_link: '/entry/510', article_prev_title: `[샘플 과정] 최종 프로젝트 11일차 :: ${TOPICS[10]}`, article_prev_date: '2026.11.17' },
+  article_next: false,
+})] };
+// A post without tags: no "함께 읽을 글", the skin's same-category grid stays.
+pages['post-notag'] = { body_id: 'tt-body-page', article_rep: [article({ tag_label: false })] };
+
+// Stand-ins for the blog's /tag/<name> pages (window.__SKIN_TAG__, set by render.mjs, maps a tag to one of these).
+// Each topic returns different rows: a post shared by two topics (it should lead both lists), the sample post itself
+// and an episode of its own series (both must be left out), and a post from another series (kept).
+const tagRow = (title, link, i, thumb = true) => ({ title, link, date: `2026.10.${String(28 - i).padStart(2, '0')}`, cat: '개발/Backend', thumb });
+const TAG_PAGES = {
+  'spring-boot': ['Spring Boot', 30, [
+    tagRow('Micrometer로 커스텀 메트릭 만들기', '/entry/620', 1), tagRow('JPA N+1 문제를 잡은 날', '/entry/610', 2), tagRow('트랜잭션 전파를 한 장으로', '/entry/611', 3, false),
+    tagRow(titles[1], '/entry/501', 4), tagRow(titles[0], '/post.html', 0), tagRow('프로필별 설정 분리하기', '/entry/612', 6, false)]],
+  prometheus: ['Prometheus', 12, [
+    tagRow('Grafana로 JVM 지표 보기', '/entry/621', 0), tagRow('Micrometer로 커스텀 메트릭 만들기', '/entry/620', 1), tagRow('알림 규칙을 짜며 배운 것', '/entry/622', 5, false),
+    tagRow(titles[0], '/post.html', 0)]],
+  docker: ['Docker', 8, [
+    tagRow('멀티 스테이지 빌드로 이미지 줄이기', '/entry/630', 2), tagRow('compose로 로컬 환경 묶기', '/entry/631', 7, false),
+    tagRow('[샘플 캠프] 해커톤 4일차 :: 기획을 다시 쪼개기', '/entry/420', 9, false)]],
+};
+export const tagSlug = (t) => t.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '');
+for (const [slug, [name, count, rows]] of Object.entries(TAG_PAGES)) {
+  pages[`tag-mock/${slug}`] = {
+    body_id: 'tt-body-tag',
+    list: { list_conform: name, list_count: count, list_description: '', list_style: '', list_empty: false,
+      list_rep: rows.map((r, i) => ({
+        list_rep_link: r.link, list_rep_title: r.title, list_rep_title_text: r.title, list_rep_summary: summary,
+        list_rep_regdate: r.date, list_rep_category: r.cat, list_rep_category_link: '#', list_rep_rp_cnt: i % 3, list_rep_author: '샘플 필명',
+        list_rep_thumbnail: r.thumb ? img(400, 300, 30 + i * 47) : '', list_rep_thumbnail_url: img(400, 300, 30 + i * 47),
+      })) },
+  };
+}
 pages['search-mock'] = {
   body_id: 'tt-body-search', search_text: '최종 프로젝트',
   list: { list_conform: '최종 프로젝트', list_count: seriesRows.length, list_description: '', list_style: '', list_empty: false,

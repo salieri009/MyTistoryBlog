@@ -77,9 +77,12 @@ for (const [file, page] of Object.entries(pages)) {
   const pathHook = page.path ? `\n<script>window.__SKIN_PATH__ = ${JSON.stringify(page.path)};</script>` : '';
   // The blog's /search/<words> page is stood in for by the rendered search-mock page (needs `npm run dev`, not file://)
   const searchHook = `\n<script>window.__SKIN_SEARCH__ = '/${page.searchMock || 'search-mock'}.html?q=';</script>`;
-  html = html.replace('<head>', `<head>\n${injectedHead}${pathHook}${searchHook}`).replace('</body>', `${injectedBody}\n</body>`);
+  // The blog's /tag/<name> pages are stood in for by tag-mock/<slug>.html, one per sample topic (same slug as sample.mjs tagSlug)
+  const tagHook = `\n<script>window.__SKIN_TAG__ = function (t) { return '/tag-mock/' + t.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '') + '.html'; };</script>`;
+  html = html.replace('<head>', `<head>\n${injectedHead}${pathHook}${searchHook}${tagHook}`).replace('</body>', `${injectedBody}\n</body>`);
   // Sample images are data: URIs; Tistory's thumbnail resizer can't fetch those, so unwrap them locally.
   html = html.replace(/\/\/i1\.daumcdn\.net\/thumb\/[^"?]+\/\?fname=(data:)/g, '$1');
+  mkdirSync(dirname(join(OUT, `${file}.html`)), { recursive: true });
   writeFileSync(join(OUT, `${file}.html`), html);
   index.push(`<li><a href="${file}.html">${file}</a> — ${page.body_id}</li>`);
 }

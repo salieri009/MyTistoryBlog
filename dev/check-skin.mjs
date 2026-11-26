@@ -32,6 +32,17 @@ for (const c of coverNames) if (!new RegExp(`<s_cover name=['"]${c}['"]`).test(s
 
 if (!/<s_t3>[\s\S]*<\/s_t3>/.test(skin)) errors.push('<s_t3> wrapper missing (Tistory common scripts)');
 
+// Uploading a changed index.xml resets every skin option and cover on the blog. The option set is frozen since 3.1;
+// change this list only on purpose, and tell the owner to re-enter the options after the upload.
+const OPTIONS_31 = ['heroText', 'heroSub', 'githubUrl', 'portfolioUrl', 'velogUrl', 'linkedinUrl', 'twitterUrl', 'email', 'colorScheme', 'listStyle', 'homeGuide', 'tocMode', 'logoImage', 'footerCopyright'];
+const optionsNow = [...declared].sort().join(',');
+if (optionsNow !== [...OPTIONS_31].sort().join(',')) errors.push(`index.xml options changed (${optionsNow}): the upload would reset the owner's settings`);
+
+// "함께 읽을 글" reads at most this many tag pages per post view
+const script = readFileSync(join(ROOT, 'images', 'script.js'), 'utf8');
+const maxTags = +(script.match(/ALSO_MAX_TAGS\s*=\s*(\d+)/) || [])[1];
+if (!(maxTags >= 1 && maxTags <= 3)) errors.push(`script.js: ALSO_MAX_TAGS must be 1-3 (found ${maxTags || 'none'})`);
+
 // Speculation rules must be valid JSON, prefetch only (prerender would run ads and analytics before a real visit)
 for (const [, json] of skin.matchAll(/<script type="speculationrules">([\s\S]*?)<\/script>/g)) {
   try {
