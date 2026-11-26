@@ -979,18 +979,26 @@
     }
     return next(1);
   }
-  /* The blog's own search page, read through this skin's markup: rows { href, title, date, cat } and the total count. */
+  /* The blog's own search page (rows and total count, see readList). */
   function searchPage(words, signal, page) {
     // __SKIN_SEARCH__: set only by the local preview harness
     var url = (window.__SKIN_SEARCH__ || '/search/') + encodeURIComponent(words);
     if (page > 1) url += (url.indexOf('?') === -1 ? '?' : '&') + 'page=' + page;
+    return readList(url, signal);
+  }
+  /* A list page of this blog (search, tag), read through this skin's markup: rows { href, title, date, cat, thumb, sum }
+     and the total count Tistory prints in the list head. */
+  function readList(url, signal) {
     return fetch(url, { credentials: 'same-origin', signal: signal })
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(function (html) {
         var page = new DOMParser().parseFromString(html, 'text/html'), rows = [];
         $$('.list .idx__row', page).forEach(function (row) {
-          var a = $('a[href]', row), t = $('.idx__title', row), c = $('.idx__cat', row);
-          if (a && t) rows.push({ href: a.getAttribute('href'), title: t.textContent.replace(/\s+/g, ' ').trim(), date: row.getAttribute('data-date') || '', cat: c ? c.textContent.trim() : '' });
+          var a = $('a[href]', row), t = $('.idx__title', row), c = $('.idx__cat', row), im = $('.idx__thumb', row), s = $('.idx__sum', row);
+          if (a && t) rows.push({
+            href: a.getAttribute('href'), title: t.textContent.replace(/\s+/g, ' ').trim(), date: row.getAttribute('data-date') || '',
+            cat: c ? c.textContent.trim() : '', thumb: im ? im.getAttribute('src') || '' : '', sum: s ? s.textContent.replace(/\s+/g, ' ').trim() : ''
+          });
         });
         var n = $('.list .list__count', page);
         return { rows: rows, count: (n && parseInt(n.textContent, 10)) || rows.length };
@@ -1015,20 +1023,29 @@
     });
     var head = $('.series-nav__title', box), ol = $('.series-nav__list', box), at = list.indexOf(cur);
     var span = function (cls, text) { var s = doc.createElement('span'); s.className = cls; s.textContent = text; return s; };
+    // This browser's own reading log: which episodes this reader finished or started. A fact about the reader, so it
+    // may be stated even when the list itself is partial.
+    var log = readLog(), readN = 0;
+    var stateOf = function (it) { var s = it.href && log[pathOf(it.href)]; return !s ? '' : s.p === 1 ? 'read' : s.p >= 0.1 ? 'reading' : ''; };
     head.textContent = '';
     head.appendChild(span('series-nav__label', '시리즈'));
     head.appendChild(span('series-nav__name', me.key));
     if (complete) head.appendChild(span('series-nav__count', list.length + '편'));
     list.forEach(function (it, i) {
       var li = doc.createElement('li'), el = doc.createElement(it === cur ? 'span' : 'a'), d = ymd(it.date);
-      li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 2 ? ' is-far' : '');
+      var st = stateOf(it), shown = it === cur ? '' : st;
+      if (st === 'read') readN++;
+      li.className = 'series-nav__item' + (it === cur ? ' is-current' : '') + (Math.abs(i - at) > 2 ? ' is-far' : '') +
+        (shown === 'read' ? ' is-read' : shown === 'reading' ? ' is-reading' : '');
       el.className = 'series-nav__link';
       if (it === cur) el.setAttribute('aria-current', 'page'); else el.href = it.href;
       el.appendChild(span('series-nav__ep', it.ep || (d ? d[1] + '.' + d[2] : String(i + 1))));
       el.appendChild(span('series-nav__main', it.main));
+      if (shown) el.appendChild(span('series-nav__state', shown === 'read' ? '읽음' : '읽는 중'));
       li.appendChild(el);
       ol.appendChild(li);
     });
+    if (readN) head.appendChild(span('series-nav__read', readN + '편 읽음'));
     if (list.length > 5 && $$('.is-far', ol).length) { // long series: two episodes either side, then the rest on request
       var more = doc.createElement('button');
       more.type = 'button'; more.className = 'series-nav__more'; more.textContent = complete ? '전체 ' + list.length + '편 보기' : '목록 모두 보기';
@@ -1048,8 +1065,65 @@
     var prevEp = step(list[at - 1], -1), nextEp = step(list[at + 1], 1);
     seriesNavItem('prev', prevEp);
     seriesNavItem('next', nextEp);
-    if (nextEp) nextRead.set({ href: nextEp.href, label: '다음 편' + (nextEp.ep ? ' · ' + nextEp.ep : ''), title: nextEp.main });
+    seriesStep(prevEp, nextEp);
+    // The next read is the next episode; if this reader already finished it, the first episode after this one they
+    // have not read (only from a complete list, so no unknown episode is skipped over).
+    var target = nextEp, what = '다음 편';
+    if (nextEp && complete && stateOf(nextEp) === 'read') {
+      target = null; what = '안 읽은 편';
+      for (var j = at + 1; j < list.length; j++) if (list[j].href && stateOf(list[j]) !== 'read') { target = list[j]; break; }
+    }
+    if (target) nextRead.set({ href: target.href, label: what + (target.ep ? ' · ' + target.ep : ''), title: target.main }, 4);
+    // The latest episode is a dead end; say so plainly and point at Tistory's own subscribe button.
+    var latest = complete && at === list.length - 1 && cur.n !== null && list.every(function (it) { return it.n === null || it.n <= cur.n; });
+    if (latest) seriesEnd(box);
     dedupeFooter();
+  }
+  /* Arrows at the top of a series post (room reserved inline by salieriHead, so nothing moves when they fill in). */
+  function seriesStep(prevEp, nextEp) {
+    var nav = $('.post .series-step');
+    if (!nav || (!prevEp && !nextEp)) return;
+    [['prev', prevEp, '이전 편'], ['next', nextEp, '다음 편']].forEach(function (s) {
+      var a = $('[data-dir="' + s[0] + '"]', nav), ep = s[1];
+      if (!a || !ep) return;
+      var label = s[2] + (ep.ep ? ' · ' + ep.ep : '') + ': ' + ep.main;
+      a.href = ep.href;
+      a.removeAttribute('aria-hidden'); a.removeAttribute('tabindex');
+      a.setAttribute('aria-label', label); a.title = label;
+      a.classList.add('is-ready');
+    });
+    nav.hidden = false;
+  }
+  /* Under the list on the latest episode: new episodes come through Tistory's subscription (or RSS). The skin only
+     scrolls to Tistory's button and focuses it; pressing it stays the reader's choice. */
+  function seriesEnd(box) {
+    if ($('.series-nav__end', box)) return;
+    var btnSel = '.post .container_postbtn .btn_subscription, .post .tt_btn_subscribe';
+    var rss = $('link[type="application/rss+xml"]'), hasBtn = !!$(btnSel);
+    if (!hasBtn && !(rss && rss.getAttribute('href'))) return;
+    var p = doc.createElement('p');
+    p.className = 'series-nav__end';
+    p.appendChild(doc.createTextNode(hasBtn ? '가장 최근 편입니다. 새 편은 구독하면 받아 볼 수 있습니다.' : '가장 최근 편입니다. 새 편은 RSS로 받아 볼 수 있습니다.'));
+    var go;
+    if (hasBtn) {
+      go = doc.createElement('button');
+      go.type = 'button'; go.textContent = '구독 버튼으로';
+      go.addEventListener('click', function () {
+        var t = $(btnSel);
+        if (!t) return;
+        var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        t.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+        t.classList.add('salieri-pointed');
+        try { t.focus({ preventScroll: true }); } catch (e) { t.focus(); }
+        setTimeout(function () { t.classList.remove('salieri-pointed'); }, 2400);
+      });
+    } else {
+      go = doc.createElement('a');
+      go.href = rss.getAttribute('href'); go.textContent = 'RSS 주소';
+    }
+    go.className = 'series-nav__end-go';
+    p.appendChild(go);
+    box.appendChild(p);
   }
   function dateLabel(s) {
     var d = ymd(s);
@@ -1078,16 +1152,19 @@
   }
 
   /* ---------- Next read: one link to the next step, under the outline in the rail and the phone sheet ----------
-     Series next episode (set by renderSeries) > Tistory's next post > the first same-category post. The rail shows it
-     once 60% of the post has been read; a post too short for an outline gets a rail with only this link. */
+     Ranked, the highest known wins: series next (or first unread) episode 4 (renderSeries) > the first post of the
+     reader's own topic 3 (initAlso) > Tistory's next post 2 > the first same-category post 1. The rail shows it once
+     60% of the post has been read; a post too short for an outline gets a rail with only this link. */
   var nextRead = { set: function () {} };
   function initNextRead(content) {
     var slots = $$('.next-read');
     var rail = $('.toc-rail'), railSlot = rail && $('.next-read', rail);
     if (!slots.length) return;
-    var current = null;
-    function fill(t) {
-      current = t;
+    var current = null, rank = 0;
+    function fill(t, r) {
+      r = r || 0;
+      if (current && r < rank) return;
+      current = t; rank = r;
       slots.forEach(function (slot) {
         slot.textContent = '';
         var a = doc.createElement('a'), label = doc.createElement('span'), title = doc.createElement('span');
@@ -1107,8 +1184,8 @@
     nextRead.set = fill;
     var mainText = function (el) { if (!el) return ''; var m = $('.series-main', el); return (m || el).textContent.trim(); };
     var next = $('.post .post-nav__item--next'), rel = $('.post .related__list a') || $('.post #article-view .another_category th a');
-    if (next && next.getAttribute('href')) fill({ href: next.getAttribute('href'), label: '다음 글', title: mainText($('.post-nav__title', next)) });
-    else if (rel) fill({ href: rel.getAttribute('href'), label: '같은 카테고리의 글', title: mainText($('.related__name', rel) || rel) });
+    if (next && next.getAttribute('href')) fill({ href: next.getAttribute('href'), label: '다음 글', title: mainText($('.post-nav__title', next)) }, 2);
+    else if (rel) fill({ href: rel.getAttribute('href'), label: '같은 카테고리의 글', title: mainText($('.related__name', rel) || rel) }, 1);
     if (!railSlot) return;
     var ticking = false;
     function reveal() {
@@ -1130,7 +1207,7 @@
     if (!foot) return;
     var seen = {};
     seen[pathOf(location.href)] = true;
-    $$('.post .post-nav a[href], .post .series-nav a[href], .post .related a[href], .post #article-view .another_category th a[href]').forEach(function (a) {
+    $$('.post .post-nav a[href], .post .series-nav a[href], .post .also a[href], .post .related a[href], .post #article-view .another_category th a[href]').forEach(function (a) {
       var h = a.getAttribute('href');
       if (h && h.charAt(0) !== '#') seen[pathOf(h)] = true;
     });
@@ -1139,6 +1216,291 @@
       if (h && h.charAt(0) !== '#' && seen[pathOf(h)]) li.remove();
     });
     $$('.module', foot).forEach(function (m) { var l = $('.module__list', m); if (l && !l.children.length) m.hidden = true; });
+  }
+
+  /* ---------- Related by topic: "함께 읽을 글" ----------
+     One post can be about more than one thing: a Spring Boot post that wires in Prometheus. The topics are the post's
+     own tags (no dictionary), weighed by where they appear: title and section headings x3, code x2 (imports,
+     Gradle/Maven lines, config: what the post actually uses), other text x1. A heading that is only the tag
+     ("4. 회고") names a section, not a topic, and does not count as one.
+     Each topic gets a chip and three posts from its tag page. Posts sharing more of this post's topics come first,
+     rarer tags weigh more (1 / log2(2 + posts with the tag)). The chip selected first is the topic of the sections
+     this reader actually spent time on: engaged seconds per section (tab visible, input in the last 15s), kept in
+     memory only, never stored or sent. Tag pages are read only once the reader is halfway or near the end, at most
+     ALSO_MAX_TAGS of them, cached for the session. */
+  var ALSO_MAX_TAGS = 3, ALSO_ROWS = 3, TAG_TTL = 30 * 60 * 1000;
+  var WORD = /[a-z0-9+#]+/g, ASCII_TAG = /^[a-z0-9+#.\-_\s]+$/i;
+  function normTag(t) { return (t || '').toLowerCase().replace(/[\s\-_.·:/]+/g, ''); }
+  // ASCII words and runs of two or three of them glued together, so "Spring Boot", "spring-boot" and "springboot"
+  // meet, while "java" does not match inside "javascript".
+  function wordRuns(text) {
+    var w = text.toLowerCase().match(WORD) || [], c = {};
+    for (var i = 0; i < w.length; i++) for (var k = 0, s = ''; k < 3 && i + k < w.length; k++) { s += w[i + k]; c[s] = (c[s] || 0) + 1; }
+    return c;
+  }
+  function Region(text) { this.text = text; this.cmp = normTag(text); this.runs = null; }
+  Region.prototype.count = function (tag) {
+    if (tag.ascii) { if (!this.runs) this.runs = wordRuns(this.text); return this.runs[tag.key] || 0; }
+    var n = 0, i = this.cmp.indexOf(tag.key);
+    while (i !== -1) { n++; i = this.cmp.indexOf(tag.key, i + tag.key.length); }
+    return n;
+  };
+  /* The post's tags, minus the ones that only repeat its series or category ("최종프로젝트", "LGCNS"). */
+  function postTags(exclude) {
+    var seen = {}, out = [];
+    $$('.post .post__tags a[href]').forEach(function (a) {
+      var name = a.textContent.replace(/^#/, '').trim(), ascii = ASCII_TAG.test(name), n = normTag(name);
+      var key = ascii ? (name.toLowerCase().match(WORD) || []).join('') : n;
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      for (var i = 0; i < exclude.length; i++) if (exclude[i] && (exclude[i] === n || (n.length >= 3 && exclude[i].indexOf(n) !== -1))) return;
+      out.push({ name: name, key: key, ascii: ascii, href: a.getAttribute('href') });
+    });
+    return out;
+  }
+  /* Weighted mentions of each tag per section (section 0 = before the first heading), and over the whole post. */
+  function weighTags(content, heads, tags) {
+    var secs = [], i, node, idx = 0, lastH = null;
+    for (i = 0; i <= heads.length; i++) secs.push({ heads: [], code: '', body: '' });
+    var SKIP = '.another_category, .container_postbtn, .revenue_unit_wrap, .code-bar, .code-more, script, style, noscript';
+    var walker = doc.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
+    while ((node = walker.nextNode())) {
+      var el = node.parentNode, h;
+      if (!el || !node.nodeValue.trim() || el.closest(SKIP)) continue;
+      while (idx < heads.length && (heads[idx].compareDocumentPosition(node) & 4)) idx++; // 4: node follows heads[idx]
+      var s = secs[idx];
+      if (el.closest('pre')) s.code += node.nodeValue + '\n';
+      else if ((h = el.closest('h2, h3, h4'))) { if (h !== lastH) { s.heads.push(''); lastH = h; } s.heads[s.heads.length - 1] += node.nodeValue; }
+      else s.body += node.nodeValue + ' ';
+    }
+    secs.forEach(function (s) {
+      s.code = new Region(s.code); s.body = new Region(s.body);
+      s.heads = s.heads.map(function (t) { return { r: new Region(t), bare: normTag(t.replace(/^[\s\d.\-)·]+/, '')) }; });
+    });
+    var titleEl = $('.post .post__title'), title = new Region(titleEl ? titleEl.textContent : '');
+    tags.forEach(function (tag) {
+      var n = normTag(tag.name);
+      tag.m = []; tag.sal = 3 * title.count(tag);
+      secs.forEach(function (s, k) {
+        var v = 2 * s.code.count(tag) + s.body.count(tag);
+        s.heads.forEach(function (hd) { if (hd.bare !== n) v += 3 * hd.r.count(tag); });
+        tag.m[k] = v; tag.sal += v;
+      });
+    });
+    return tags;
+  }
+  function tagRows(tag) {
+    var key = 'salieri-tag:' + tag.name, cached = null;
+    try { cached = JSON.parse(session.get(key) || 'null'); } catch (e) {}
+    if (cached && Date.now() - cached.t < TAG_TTL) return Promise.resolve(cached);
+    // __SKIN_TAG__: set only by the local preview harness
+    var url = window.__SKIN_TAG__ ? window.__SKIN_TAG__(tag.name) : tag.href;
+    if (!url) return Promise.reject(new Error('no tag page'));
+    return readList(url).then(function (res) {
+      var v = { t: Date.now(), rows: res.rows, count: res.count };
+      session.set(key, JSON.stringify(v));
+      return v;
+    });
+  }
+  function initAlso(content, heads) {
+    var box = $('.post .also'), post = $('.post');
+    if (!box || !window.fetch || !window.DOMParser || !window.Promise) return;
+    var tablist = $('.also__topics', box), panelEl = $('.also__panel', box), list = $('.also__list', box), all = $('.also__all', box);
+    var sEl = $('.post .post__title .series'), me = sEl ? seriesOf(sEl.textContent) : null;
+    var exclude = $$('.post .crumbs a').map(function (a) { return normTag(a.textContent); }).concat(me ? [normTag(me.key)] : []);
+    var topics = weighTags(content, heads, postTags(exclude))
+      .filter(function (t) { return t.sal >= 1; })
+      .sort(function (a, b) { return (b.sal - a.sal) || (b.name.length - a.name.length); })
+      .slice(0, ALSO_MAX_TAGS);
+    if (!topics.length) return;
+
+    // Engaged seconds per section: counted only while the tab is visible and the reader did something recently.
+    var dwell = [], lastInput = Date.now(), EVENTS = ['scroll', 'wheel', 'keydown', 'pointerdown', 'pointermove', 'touchstart'], k;
+    for (k = 0; k <= heads.length; k++) dwell.push(0);
+    var bump = function () { lastInput = Date.now(); };
+    EVENTS.forEach(function (ev) { addEventListener(ev, bump, { passive: true }); });
+    var tick = setInterval(function () {
+      if (doc.visibilityState === 'hidden' || Date.now() - lastInput > 15000) return;
+      var s = 0;
+      for (var i = 0; i < heads.length; i++) { if (heads[i].getBoundingClientRect().top < innerHeight * 0.3) s = i + 1; else break; }
+      dwell[s]++;
+    }, 1000);
+    function stopTick() { clearInterval(tick); EVENTS.forEach(function (ev) { removeEventListener(ev, bump, { passive: true }); }); }
+    // Topic order: the first chip is the topic of the reader's sections (each section's seconds shared among the topics
+    // it mentions); the others follow the post's own weighting, which also decides alone while the reader has spent
+    // under five seconds on sections that mention any topic.
+    function ordered(pool) {
+      var total = 0;
+      pool.forEach(function (tp) {
+        var r = 0;
+        for (var s = 0; s < dwell.length; s++) {
+          if (!dwell[s]) continue;
+          var sum = 0;
+          pool.forEach(function (t) { sum += t.m[s]; });
+          if (sum) r += dwell[s] * tp.m[s] / sum;
+        }
+        tp.reader = r; total += r;
+      });
+      var bySal = pool.slice().sort(function (a, b) { return b.sal - a.sal; });
+      if (total < 5) return bySal;
+      var top = bySal.reduce(function (best, tp) { return tp.reader > best.reader ? tp : best; }, bySal[0]);
+      return [top].concat(bySal.filter(function (tp) { return tp !== top; }));
+    }
+
+    var cands = null, shown = [], locked = false;
+    var dateKey = function (c) { var d = ymd(c.row.date); return d ? d.join('') : TIME_ONLY.test(c.row.date) ? todayYmd().join('') : ''; };
+    var byScore = function (a, b) { return (b.score - a.score) || (dateKey(a) < dateKey(b) ? 1 : dateKey(a) > dateKey(b) ? -1 : 0); };
+    function el(tag, cls, text) { var e = doc.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+    function panel(tp) {
+      list.textContent = '';
+      tp.rows.forEach(function (c) {
+        var li = el('li', 'also__item'), a = el('a', 'also__link'), main = el('span', 'also__main'), name = el('strong', 'also__name');
+        var parts = splitTitle(c.row.title);
+        a.href = c.row.href;
+        if (parts) { name.className += ' has-series'; name.appendChild(el('span', 'series', parts.label)); name.appendChild(el('span', 'series-main', parts.main)); }
+        else name.textContent = c.row.title;
+        main.appendChild(name);
+        // Why this post: the shared topics, the selected one first
+        var why = [tp].concat(c.topics.filter(function (t) { return t !== tp && shown.indexOf(t) !== -1; }).sort(function (x, y) { return y.w - x.w; }));
+        main.appendChild(el('span', 'also__why', '같은 태그 · ' + why.slice(0, 3).map(function (t) { return t.name; }).join(' · ')));
+        if (c.row.sum) main.appendChild(el('span', 'also__sum', c.row.sum));
+        a.appendChild(main);
+        if (c.row.thumb) {
+          var img = el('img', 'also__thumb');
+          img.src = c.row.thumb; img.alt = ''; img.loading = 'lazy'; img.decoding = 'async';
+          a.appendChild(img);
+        }
+        li.appendChild(a); list.appendChild(li);
+      });
+      all.href = tp.href || '#';
+      all.textContent = '#' + tp.name + ' 글' + (tp.res.count ? ' ' + tp.res.count + '편' : '') + ' 모두 보기';
+    }
+    function select(i, focus) {
+      var tabs = $$('.also__topic', tablist);
+      tabs.forEach(function (t, j) { t.setAttribute('aria-selected', j === i ? 'true' : 'false'); t.tabIndex = j === i ? 0 : -1; });
+      if (tabs[i]) { panelEl.setAttribute('aria-labelledby', tabs[i].id); if (focus) tabs[i].focus(); }
+      panel(shown[i]);
+    }
+    tablist.addEventListener('keydown', function (e) {
+      var tabs = $$('.also__topic', tablist), i = tabs.indexOf(doc.activeElement), n = tabs.length;
+      if (i < 0) return;
+      var j = e.key === 'ArrowRight' ? (i + 1) % n : e.key === 'ArrowLeft' ? (i - 1 + n) % n : e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : -1;
+      if (j < 0) return;
+      e.preventDefault();
+      select(j, true);
+    });
+    function render() {
+      var skip = {}, mine = me ? me.key.toLowerCase() : null, pool = [], p;
+      skip[pathOf(location.href)] = true;
+      $$('.post .post-nav a[href], .post .series-nav a[href], .post #article-view .another_category th a[href]').forEach(function (a) { skip[pathOf(a.getAttribute('href'))] = true; });
+      for (p in cands) {
+        var c = cands[p], parts = splitTitle(c.row.title);
+        if (skip[p] || (mine && parts && seriesOf(parts.label).key.toLowerCase() === mine)) continue; // the series list has those
+        c.score = 0;
+        c.topics.forEach(function (t) { c.score += t.w; });
+        pool.push(c);
+      }
+      if (pool.length < 2) { box.hidden = true; if (post) post.classList.remove('has-also'); return; }
+      var live = topics.filter(function (tp) { return tp.res && pool.some(function (c) { return c.topics.indexOf(tp) !== -1; }); });
+      shown = ordered(live);
+      shown.forEach(function (tp) { tp.rows = pool.filter(function (c) { return c.topics.indexOf(tp) !== -1; }).sort(byScore).slice(0, ALSO_ROWS); });
+      tablist.textContent = '';
+      if (shown.length > 1) {
+        shown.forEach(function (tp, i) {
+          var b = el('button', 'also__topic', tp.name);
+          b.type = 'button'; b.id = 'also-tab-' + i;
+          b.setAttribute('role', 'tab'); b.setAttribute('aria-controls', 'also-panel');
+          if (tp.res.count) { b.appendChild(el('span', 'also__count', String(tp.res.count))); b.setAttribute('aria-label', tp.name + ', 글 ' + tp.res.count + '편'); }
+          b.addEventListener('click', function () { select(i, false); });
+          tablist.appendChild(b);
+        });
+        tablist.hidden = false; panelEl.setAttribute('role', 'tabpanel');
+      } else {
+        tablist.hidden = true; panelEl.removeAttribute('role'); panelEl.removeAttribute('aria-labelledby');
+      }
+      select(0, false);
+      box.hidden = false;
+      if (post) post.classList.add('has-also'); // the category grid steps aside: one list of next posts, not two
+      var first = shown[0].rows[0], fp = splitTitle(first.row.title);
+      nextRead.set({ href: first.row.href, label: '같은 주제 · ' + shown[0].name, title: fp ? fp.main : first.row.title }, 3);
+      dedupeFooter();
+    }
+    // The block changes the page only off screen: below the fold, or above it where scroll anchoring holds the view.
+    function offScreen() {
+      var prev = box.previousElementSibling;
+      while (prev && !prev.getClientRects().length) prev = prev.previousElementSibling;
+      var y = prev ? prev.getBoundingClientRect().bottom : box.getBoundingClientRect().top;
+      if (y > innerHeight) return 'below';
+      return y < 0 && window.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto') ? 'above' : '';
+    }
+    // Once the block is about to come into view the order is settled with the reader's latest sections, then kept.
+    function lock() {
+      if (locked) return;
+      locked = true;
+      stopTick();
+      var before = shown[0];
+      if (box.getBoundingClientRect().top > innerHeight && ordered(shown)[0] !== before) render();
+    }
+    function show() {
+      var where = offScreen();
+      if (!where) return false;
+      render();
+      if (box.hidden) { stopTick(); return true; }
+      if (where === 'below' && window.IntersectionObserver) {
+        var io = new IntersectionObserver(function (es) {
+          for (var i = 0; i < es.length; i++) if (es[i].isIntersecting) { io.disconnect(); lock(); return; }
+        }, { rootMargin: '0px 0px 50% 0px' });
+        io.observe(box);
+      } else lock();
+      return true;
+    }
+    function build() {
+      cands = {};
+      topics.forEach(function (tp) {
+        if (!tp.res || !tp.res.rows.length) return;
+        tp.w = 1 / (Math.log(2 + Math.max(tp.res.count || 0, tp.res.rows.length)) / Math.LN2);
+        tp.res.rows.forEach(function (r) {
+          var p = pathOf(r.href), c = cands[p] || (cands[p] = { row: r, topics: [] });
+          if (c.topics.indexOf(tp) === -1) c.topics.push(tp);
+        });
+      });
+      if (show()) return;
+      // In view right now (a short post, or a jump to the comments): wait until it can appear without moving the page.
+      var waiting = false;
+      var retry = function () {
+        if (waiting) return;
+        waiting = true;
+        requestAnimationFrame(function () { waiting = false; if (show()) removeEventListener('scroll', retry); });
+      };
+      addEventListener('scroll', retry, { passive: true });
+    }
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      Promise.all(topics.map(function (tp) {
+        return tagRows(tp).then(function (res) { tp.res = res; }, function () { tp.res = null; });
+      })).then(build);
+    }
+    // Read the tag pages only for readers who are going on: halfway through, or near the tags.
+    var near = $('.post .post__tags') || $('.post .post-nav');
+    if (window.IntersectionObserver && near) {
+      var io = new IntersectionObserver(function (es) {
+        for (var i = 0; i < es.length; i++) if (es[i].isIntersecting) { io.disconnect(); start(); return; }
+      }, { rootMargin: '0px 0px 150% 0px' });
+      io.observe(near);
+    } else start();
+    var halfTicking = false;
+    var half = function () {
+      if (halfTicking) return;
+      halfTicking = true;
+      requestAnimationFrame(function () {
+        halfTicking = false;
+        var r = content.getBoundingClientRect(), total = r.height - innerHeight * 0.6;
+        if (total <= 0 || -r.top / total >= 0.5) { removeEventListener('scroll', half); start(); }
+      });
+    };
+    addEventListener('scroll', half, { passive: true });
   }
 
   /* ---------- Author: one card with Tistory's namecard ----------
@@ -1209,7 +1571,8 @@
     if (content) {
       initMarkdown(content); initCode(content); initTables(content); initReadTime(content);
       var heads = tocHeads(content);
-      initToc(content, heads); initResume(content, heads); initHeadingLinks(heads); initProgress(content);
+      // initAlso reads the headings before the "#" section links are appended to them
+      initToc(content, heads); initResume(content, heads); initAlso(content, heads); initHeadingLinks(heads); initProgress(content);
       initNextRead(content); dedupeFooter();
       initSeriesNav(); initAuthorMerge();
     }

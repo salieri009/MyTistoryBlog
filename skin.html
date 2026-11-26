@@ -43,6 +43,16 @@
           var s = d.createElement('span'), m = d.createElement('span');
           s.className = 'series'; s.textContent = left; m.className = 'series-main'; m.textContent = right;
           h.insertBefore(s, n); h.replaceChild(m, n); h.classList.add('has-series');
+          // An episode ("… 3일차"): room for the 이전 편 / 다음 편 arrows on the breadcrumb row, made now so the row
+          // never reflows; script.js fills them once the series list is read.
+          var head = h.parentNode;
+          if (/^(.+?)\s*(\d+)\s*(일\s*차|회차|회|편|화|부|주차|강|장)$/.test(left.replace(/\s+/g, ' ')) && head && !head.querySelector('.series-step')) {
+            var nav = d.createElement('nav'), arrows = { prev: 'M15 6l-6 6 6 6', next: 'M9 6l6 6-6 6' };
+            nav.className = 'series-step'; nav.setAttribute('aria-label', '시리즈 이동'); nav.hidden = true;
+            for (var dir in arrows) nav.insertAdjacentHTML('beforeend', '<a class="series-step__btn" data-dir="' + dir + '" aria-hidden="true" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + arrows[dir] + '"/></svg></a>');
+            head.insertBefore(nav, h);
+            head.classList.add('has-step');
+          }
           break;
         }
       }
@@ -112,12 +122,14 @@
         var raw = rows[r].getAttribute('data-date') || '', ymd = raw.match(/(\d{4})[.\-/]\s*(\d{1,2})[.\-/]\s*(\d{1,2})/);
         var when = ymd ? new Date(+ymd[1], +ymd[2] - 1, +ymd[3]).getTime() : /^\s*\d{1,2}:\d{2}/.test(raw) ? now : 0; // a bare time = today
         var key = m[1].trim(), g = key.toLowerCase();
-        if (!groups[g]) { groups[g] = { name: key, href: a.getAttribute('href'), latest: m[2] + m[3].replace(/\s+/g, '') + ' · ' + main, when: when, n: 0 }; order.push(g); }
+        if (!groups[g]) { groups[g] = { name: key, href: a.getAttribute('href'), latest: m[2] + m[3].replace(/\s+/g, '') + ' · ' + main, when: when, n: 0, read: 0 }; order.push(g); }
         groups[g].n++;
+        var seen = log[a.pathname.replace(/\/+$/, '')]; // this reader finished it (reading log, this browser only)
+        if (seen && seen.p === 1) groups[g].read++;
       }
       column('series', '최근 시리즈', order.filter(function (g) { return groups[g].n > 1 && now - groups[g].when <= 30 * 864e5; }).slice(0, 3).map(function (g) {
         var s = groups[g];
-        return { href: s.href, name: s.name, meta: s.latest + ' · 최근 글 중 ' + s.n + '편' };
+        return { href: s.href, name: s.name, meta: s.latest + ' · 최근 글 중 ' + s.n + '편' + (s.read ? ' · ' + s.read + '편 읽음' : '') };
       }));
       if (box.children.length) box.hidden = false;
     };
@@ -389,6 +401,14 @@
             <section class="series-nav" id="series" aria-labelledby="series-title" hidden>
               <h2 class="series-nav__title" id="series-title"></h2>
               <ol class="series-nav__list"></ol>
+            </section>
+
+            <!-- Related by topic: a chip per topic of this post (its tags, weighed by where they appear), three posts each
+                 from the tag pages; the reader's most-read topic is selected first. Filled by script.js (initAlso). -->
+            <section class="also" id="also" aria-labelledby="also-title" hidden>
+              <h2 class="also__title" id="also-title">함께 읽을 글</h2>
+              <div class="also__topics" role="tablist" aria-label="이 글의 주제" hidden></div>
+              <div class="also__panel" id="also-panel"><ol class="also__list"></ol><a class="also__all" href="#"></a></div>
             </section>
 
             <s_article_related>
